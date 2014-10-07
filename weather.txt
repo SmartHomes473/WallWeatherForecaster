@@ -1,0 +1,5 @@
+Ann Arbor, MI ,70,50,75,0
+Brooklyn, MI ,68,48,89,0
+Austin, TX ,98,74,97,0
+Seattle, WA ,73,52,63,30
+Denver, CO ,75,49,74,80
