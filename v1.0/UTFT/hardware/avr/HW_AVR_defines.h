@@ -20,6 +20,6 @@
 
 #define fontbyte(x) pgm_read_byte(&cfont.font[x])  
 
-typedef volatile uint8_t *regtype;
-typedef uint8_t regsize;
-typedef unsigned int *bitmapdatatype;
+#define regtype volatile uint8_t
+#define regsize uint8_t
+#define bitmapdatatype unsigned int*

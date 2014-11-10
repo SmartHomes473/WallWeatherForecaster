@@ -14,7 +14,7 @@
 #define pgm_read_word(data) *(data)
 #define pgm_read_byte(data) *(data)
 #define PROGMEM
-typedef volatile uint8_t *regtype;
+typedef volatile uint8_t *reg_type;
 typedef uint8_t regsize;
 typedef unsigned short *bitmapdatatype;
 #define DISABLE_FLOATING_POINT	1

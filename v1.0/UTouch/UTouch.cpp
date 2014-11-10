@@ -24,6 +24,8 @@
 	#include "hardware/pic32/HW_PIC32.inc"
 #elif defined(__arm__)
 	#include "hardware/arm/HW_ARM.inc"
+#elif defined(__MSP430__)
+	#include "hardware/msp430/HW_MSP430.inc"
 #endif
 
 UTouch::UTouch(byte tclk, byte tcs, byte din, byte dout, byte irq)

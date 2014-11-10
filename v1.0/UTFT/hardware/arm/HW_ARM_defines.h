@@ -1,7 +1,9 @@
 // CTE TFT LCD/SD Shield for Arduino Due
 // -------------------------------------
+// CTE TFT LCD/SD Shield for Arduino Due
+// -------------------------------------
 // Uncomment the following line if you are using this shield
-//#define CTE_DUE_SHIELD 1
+   #define CTE_DUE_SHIELD 1
 //
 // For this shield: RS=25, WR=26, CS=27, RST=28
 //********************************************************************
@@ -21,6 +23,6 @@
 
 #define pgm_read_word(data) *data
 #define pgm_read_byte(data) *data
-typedef volatile uint32_t *regtype;
-typedef uint32_t regsize;
-typedef unsigned short *bitmapdatatype;
+#define regtype volatile uint32_t
+#define regsize uint32_t
+#define bitmapdatatype unsigned short*

@@ -1,3 +1,4 @@
+
 //---------------------------------------------------------------
 // LCD - Displays temp, humidity etc.
 class CityWeather{    
@@ -5,16 +6,17 @@ class CityWeather{
     int cityIndex;
 	int low;
 	int high;
-	String condition;
+	char* condition;
     int rainChance;
-    String cityName;
+    char* cityName;
+	int humidity;
 
    CityWeather();
-   CityWeather(String name, int hi, int low, unsigned humidity, unsigned rain);
+   CityWeather(char* name, int hi, int low, unsigned humidity, unsigned rain);
    
-   String getCityName();
+   char* getCityName();
    int getRainChance();
-   String getCondition();
+   char* getCondition();
    int getHumidity();
    int getLow();
    int getHigh();

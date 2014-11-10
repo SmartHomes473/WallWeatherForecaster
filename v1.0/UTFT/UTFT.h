@@ -216,7 +216,7 @@ class UTFT
 		byte orient;
 		long disp_x_size, disp_y_size;
 		byte display_model, display_transfer_mode, display_serial_mode;
-		regtype P_RS, P_WR, P_CS, P_RST, P_SDA, P_SCL, P_ALE;
+		reg_type P_RS, P_WR, P_CS, P_RST, P_SDA, P_SCL, P_ALE;
 		regsize B_RS, B_WR, B_CS, B_RST, B_SDA, B_SCL, B_ALE;
 		byte RS, WR, CS, RST, SER;
 		_current_font	cfont;

@@ -1,15 +1,17 @@
+#include "CityWeather.h"
+
 CityWeather::CityWeather() {
 	cityIndex = 0;
 	rainChance = 50;
 }
 
-CityWeather::CityWeather(String name, int hi, int low, unsigned humidity, unsigned rain)
+CityWeather::CityWeather(char* name, int hi, int low, unsigned humidity, unsigned rain)
 {
 	cityName = name;
 	rainChance = rain%101;
 }
 
-String CityWeather::getCityName()
+char* CityWeather::getCityName()
 {
 	return cityName;
 }
@@ -19,7 +21,7 @@ int CityWeather::getRainChance()
 	return rainChance; 
 }
 
-String CityWeather::getCondition() {
+char* CityWeather::getCondition() {
 	return condition;
 }
 
