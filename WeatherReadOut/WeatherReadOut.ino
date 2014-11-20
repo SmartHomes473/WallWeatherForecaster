@@ -5,8 +5,6 @@
   This example code is in the public domain.
  */
 #include <Servo.h>
-#include "rgb_lcd.h"
-#include <Ethernet.h>
 #include <SD.h>
 //---------------------------------------------------------------
 // Pin parameters
@@ -19,10 +17,9 @@
 // Some constants
 #define DELTA 25
 #define degree String(char(223))
-byte mac[] = { 0x98, 0x4f, 0xee, 0x01, 0x86, 0x30 };  
 
 //---------------------------------------------------------------
-// Status LED
+// Status LEDc
 int statLedState = LOW;
 
 //---------------------------------------------------------------
@@ -45,11 +42,15 @@ int SetServoPercent(Servo servo, int percent)
 char blah = 'a';
 class CityWeather{    
   public:
-    unsigned cityIndex = 0;
-    unsigned dataIndex = 0;
-    int rainChance = 50;
+    unsigned cityIndex;
+    unsigned dataIndex;
+    int rainChance;
     String cityName;
-    String data;
+    String data; // TODO: Remove
+    String highTemp;
+    String lowTemp;
+    String humidityPercent;
+    
 
    CityWeather() {
      //CityWeather( "Bum Fuk, Egypt"+blah,blah*10,blah*5,blah*20,blah++*20);
@@ -70,6 +71,9 @@ class CityWeather{
    void UpdateWeather(String name, int hi, int low, unsigned humidity, unsigned rain)
    {
        cityName = name;
+       highTemp = String(hi);
+       lowTemp = String(low);
+       humidityPercent = String(humidity);
        data = "High: "+String(hi)+degree+"F Low: "+String(low)+degree+"F "+"Humidity: "+String(humidity)+"% ";
        rainChance = rain%101;
    }
@@ -113,8 +117,6 @@ class CityWeather{
    
    void LoadData(char *s) {LoadScrolling(data,s,&dataIndex);}
 };
-
-rgb_lcd lcd;
 
 CityWeather Cities[5];
 char c[17];
@@ -169,26 +171,26 @@ String packet;
 
 void SendAck(String data)
 {
-  Serial.println("Sending ACK: "+data);
+  //Serial.println("Sending ACK: "+data);
   unsigned len = data.length();
-  Serial1.print("\x0f\x01\x03");
-  Serial1.print(char(len>>8));
-  Serial1.print(char(len&0xff));
-  Serial1.print(data);
-  Serial1.println("\x04");
+  Serial.print("\x0f\x01\x03");
+  Serial.print(char(len>>8));
+  Serial.print(char(len&0xff));
+  Serial.print(data);
+  Serial.println("\x04");
 }
 
 void SendRequest(String data)
 {
-  Serial.println("Sending REQ: "+data);
+  //Serial.println("Sending REQ: "+data);
   unsigned len = data.length();
-  Serial.println("Sending REQ: "+String((len>>8)));
-  Serial.println("Sending REQ: "+String(len&0xff));
-  Serial1.print("\x0f\x01\x05");
-  Serial1.print(char(len>>8));
-  Serial1.print(char(len&0xff));
-  Serial1.print(data);
-  Serial1.println("\x04");
+  //Serial.println("Sending REQ: "+String((len>>8)));
+  //Serial.println("Sending REQ: "+String(len&0xff));
+  Serial.print("\x0f\x01\x05");
+  Serial.print(char(len>>8));
+  Serial.print(char(len&0xff));
+  Serial.print(data);
+  Serial.println("\x04");
 }
 
 String ParseValue(int &i,String s)
@@ -205,31 +207,32 @@ String ParseValue(int &i,String s)
 }
 void processWeatherUpdate(int & index,String Data){
   byte cityNumber = byte(ParseValue(index,Data).toInt())-1;
-  Serial.println("number: "+String(cityNumber));
+  //Serial.println("number: "+String(cityNumber));
   String cityName = ParseValue(index,Data)+' ';
-  Serial.println("name: "+String(cityName));
+  //Serial.println("name: "+String(cityName));
   int cityHigh = ParseValue(index,Data).toInt();
-  Serial.println("H: "+String(cityHigh));
+  //Serial.println("H: "+String(cityHigh));
   int cityLow = ParseValue(index,Data).toInt();
-  Serial.println("L: "+String(cityLow));
+  //Serial.println("L: "+String(cityLow));
   unsigned cityHumid = unsigned(ParseValue(index,Data).toInt());
-  Serial.println("Hu: "+String(cityHumid));
+  //Serial.println("Hu: "+String(cityHumid));
   unsigned cityPOP = unsigned(ParseValue(index,Data).toInt());
   Cities[cityNumber].UpdateWeather(cityName,cityHigh,cityLow,cityHumid,cityPOP);
 }
+
 void packetProcessor(byte id, byte packetStatus, unsigned packetLength, String Data)
 { // reads data
   int index = 0;
-  Serial.println("Data: "+Data);
+  //Serial.println("Data: "+Data);
   if (id == SMRTControlID)
     {
-      Serial.println(packetStatus);
+      //Serial.println(packetStatus);
       char cmd;
       if(packetStatus == 2)
 	{
 	  while(Data[index] != 0)
 	    {
-	      Serial.println(Data[index]);
+	      //Serial.println(Data[index]);
 	      cmd = Data[index++];
 	      if( cmd == 'w')
 		{
@@ -254,12 +257,12 @@ void packetProcessor(byte id, byte packetStatus, unsigned packetLength, String D
 
 void packetBuilder()
 { // builds packet from xbee input
-  if (Serial1.available())
+  if (Serial.available())
   {
     int i = 0;
-     while(Serial1.available())
+     while(Serial.available())
      {
-        incoming[i++]= char(Serial1.read());
+        incoming[i++]= char(Serial.read());
      }
      //Serial.println("Incoming: "+String(incoming));
      incoming[i++] = NULL;
@@ -317,9 +320,9 @@ void packetBuilder()
          byte devStatus = *(beginD+2);
          unsigned pLength = *(beginD+3)<<8 + *(beginD+4);
          packet = String(beginD+5);
-         Serial.println("Processing: Start");
+         //Serial.println("Processing: Start");
          packetProcessor(devID,devStatus,pLength,packet);
-         Serial.println("Processing: done");
+         //Serial.println("Processing: done");
          
          beginD = strchr(endD+1,0x0f);
          if(beginD)
@@ -337,7 +340,7 @@ void packetBuilder()
          inbufferI = 0;
        }
      }
-  Serial.println("Made it");
+  //Serial.println("Made it");
   }
 }
 
@@ -345,15 +348,11 @@ void packetBuilder()
 // the setup routine runs once when you press reset:
 void setup() {
   // LCD
-  lcd.begin(16, 2);
-  lcd.setRGB(255,0,0);
-  lcd.print("Initalizing:");
-  lcd.setCursor(0,1);
-  lcd.print("WORKING");
   
   // Serial for debugging
   Serial.begin(9600);
-  Serial1.begin(9600);/*
+  //SerialSerial.begin(9600);
+  /*
   if (Ethernet.begin(mac) == 0)
       Serial.println("Failed to configure Ethernet using DHCP");
   else
@@ -368,13 +367,7 @@ void setup() {
   // Get current city
   switchOldReading = analogRead(citySwitchPin);
   
-  lcd.setCursor(0,1);
-  delay(1000);
-  lcd.print("COMPLETE");
-  lcd.setRGB(0,255,0);
-  delay(2000);
-  lcd.clear();
-  lcd.setRGB(255,255,255);
+  // Output LCD stuff
   // Request Weather
   Serial.println("Init: Done");
   SendRequest("f");
@@ -413,29 +406,6 @@ void loop() {
   // Update LCD Task - Performs scrolling of data.
   if(lcdTime < curTime)
   {
-    lcdTime += lcdDelay;
-    Cities[switchOldReading].LoadCityName(c);
-    Cities[switchOldReading].LoadData(d);
-    lcd.setCursor(0,0);
-    lcd.write(c);
-    lcd.setCursor(0,1);
-    lcd.write(d);
   }
-  /*
-  // Rain Meter Task - Adjust servo to percentage
-  if(rainMeterTime < curTime)
-  {
-    rainMeterTime = curTime + rainMeterDelay;
-    // Get new Percentage and move servo.
-    percentage = percentage + percentageDelta;
-    SetServoPercent(rainMeter,percentage);
-    // Change degree change if at max/min
-    if(percentage >= 100)
-      percentageDelta = -DELTA;
-    else if(percentage <= 0)
-      percentageDelta = DELTA;
-    Serial.println(percentage);
-  }
-  */
 }
 
