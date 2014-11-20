@@ -1,66 +1,41 @@
-/*
-  Blink
-  Turns on an LED on for one second, then off for one second, repeatedly.
- 
-  This example code is in the public domain.
- */
-#include <Servo.h>
-#include <SD.h>
 //---------------------------------------------------------------
-// Pin parameters
-#define statLedPin 13
-#define rainMeterPin 5
-#define areaSelectorPin 6
-#define citySwitchPin 14
-//---------------------------------------------------------------
-
-// Some constants
-#define DELTA 25
-#define degree String(char(223))
+// Pin parameters - All pins owned by devices.
 
 //---------------------------------------------------------------
-// Status LEDc
-int statLedState = LOW;
+
 
 //---------------------------------------------------------------
 // rainMeter - Chance of rain
-Servo rainMeter;
 int percentage = 0;
-int percentageDelta = DELTA;
 
-int SetServoPercent(Servo servo, int percent)
+int SetServoPercent(int p)
 { 
-  // Sets servo arm to percentage.
-  //    0 % is all the way counter clockwise
-  //  100 % is all the way clockwise.
-   servo.write((97-percent) *1.8);
+  
 }
 
 
 //---------------------------------------------------------------
 // LCD - Displays temp, humidity etc.
 char blah = 'a';
+
 class CityWeather{    
   public:
-    unsigned cityIndex;
-    unsigned dataIndex;
+    // Precent of Percipitation
     int rainChance;
+    // City Name
     String cityName;
-    String data; // TODO: Remove
+    // High forecasted temperature
     String highTemp;
+    // Low forecasted temperature
     String lowTemp;
+    // Humidity percentage
     String humidityPercent;
     
 
    CityWeather() {
-     //CityWeather( "Bum Fuk, Egypt"+blah,blah*10,blah*5,blah*20,blah++*20);
+     // Default constructor
      cityName = "Bum Fuk, Egypt"+String(blah);
-     data = "Hi: 999"+String(degree)+"K Low: 1"+String(degree)+"K Humidity: 100%"+String(blah++)+" ";
      rainChance = 50; 
-   }
-   
-   CityWeather(String fileName){
-     // Read from file.
    }
    
    CityWeather(String name, int hi, int low, unsigned humidity, unsigned rain)
@@ -74,70 +49,21 @@ class CityWeather{
        highTemp = String(hi);
        lowTemp = String(low);
        humidityPercent = String(humidity);
-       data = "High: "+String(hi)+degree+"F Low: "+String(low)+degree+"F "+"Humidity: "+String(humidity)+"% ";
        rainChance = rain%101;
    }
-   
-   String GetCityName()
-   {
-     return cityName;
-   }
-   
-   String GetData()
-   {
-     return data;
-   }
-   
-   unsigned GetRainChance()
-   {
-    return rainChance; 
-   }
-   
-   void LoadScrolling(String source, char *dest, unsigned *sIndex)
-   {
-     if(source.length() < 16)
-     {
-       (source+"             ").toCharArray(dest,17);
-     }
-     else
-     {
-       if(source.length() >= (*sIndex+16))
-       {
-         source.substring(*sIndex).toCharArray(dest,17);
-       }
-       else
-       {
-         (source.substring(*sIndex)+source).toCharArray(dest,17);
-       }
-      *sIndex = ((*sIndex)+1) % source.length();
-     }
-   }
-   
-   void LoadCityName(char *s) {LoadScrolling(cityName,s,&cityIndex);}
-   
-   void LoadData(char *s) {LoadScrolling(data,s,&dataIndex);}
 };
 
 CityWeather Cities[5];
-char c[17];
-char d[17];
-
-
-//---------------------------------------------------------------
-// Switch Reading - Determines city displayed on LCD screen.
-unsigned switchOldReading;
-unsigned switchCurReading;
    
 //---------------------------------------------------------------
 // Time management
 long curTime = 0;
 
-// Update
+// Weather Update
 const unsigned long updateDelay = 5000; 
 long updateTime = 0;
-// Status LED
-const unsigned long statLedDelay = 1000;
-long statLedTime = statLedDelay;
+
+// Motion Sensor
 
 // Rain Meter
 const unsigned long rainMeterDelay = 5000;
@@ -147,9 +73,6 @@ unsigned long rainMeterTime = rainMeterDelay;
 const unsigned long lcdDelay = 500;
 unsigned long lcdTime = lcdDelay;
 
-// Switch
-const unsigned long switchDelay = 1000;
-unsigned long switchTime = switchDelay;
 
 //---------------------------------------------------------------
 // Comms
@@ -171,7 +94,7 @@ String packet;
 
 void SendAck(String data)
 {
-  //Serial.println("Sending ACK: "+data);
+  // Sends formated message of acknowledge
   unsigned len = data.length();
   Serial.print("\x0f\x01\x03");
   Serial.print(char(len>>8));
@@ -182,10 +105,8 @@ void SendAck(String data)
 
 void SendRequest(String data)
 {
-  //Serial.println("Sending REQ: "+data);
+  // Sends formated request
   unsigned len = data.length();
-  //Serial.println("Sending REQ: "+String((len>>8)));
-  //Serial.println("Sending REQ: "+String(len&0xff));
   Serial.print("\x0f\x01\x05");
   Serial.print(char(len>>8));
   Serial.print(char(len&0xff));
@@ -195,6 +116,7 @@ void SendRequest(String data)
 
 String ParseValue(int &i,String s)
 {
+ // Extracts value from string
  while(s != NULL && s[i] != ';') {
    i++;
  }
@@ -205,34 +127,30 @@ String ParseValue(int &i,String s)
  }
  return s.substring(start,i);
 }
+
 void processWeatherUpdate(int & index,String Data){
+  // Update Weather Forecast
   byte cityNumber = byte(ParseValue(index,Data).toInt())-1;
-  //Serial.println("number: "+String(cityNumber));
   String cityName = ParseValue(index,Data)+' ';
-  //Serial.println("name: "+String(cityName));
   int cityHigh = ParseValue(index,Data).toInt();
-  //Serial.println("H: "+String(cityHigh));
   int cityLow = ParseValue(index,Data).toInt();
-  //Serial.println("L: "+String(cityLow));
   unsigned cityHumid = unsigned(ParseValue(index,Data).toInt());
-  //Serial.println("Hu: "+String(cityHumid));
   unsigned cityPOP = unsigned(ParseValue(index,Data).toInt());
   Cities[cityNumber].UpdateWeather(cityName,cityHigh,cityLow,cityHumid,cityPOP);
 }
 
 void packetProcessor(byte id, byte packetStatus, unsigned packetLength, String Data)
-{ // reads data
+{
+  // Process completed packet
   int index = 0;
-  //Serial.println("Data: "+Data);
   if (id == SMRTControlID)
     {
-      //Serial.println(packetStatus);
+      // Is this packet for me?
       char cmd;
       if(packetStatus == 2)
 	{
 	  while(Data[index] != 0)
 	    {
-	      //Serial.println(Data[index]);
 	      cmd = Data[index++];
 	      if( cmd == 'w')
 		{
@@ -349,25 +267,12 @@ void packetBuilder()
 void setup() {
   // LCD
   
-  // Serial for debugging
+  // Comms
   Serial.begin(9600);
-  //SerialSerial.begin(9600);
-  /*
-  if (Ethernet.begin(mac) == 0)
-      Serial.println("Failed to configure Ethernet using DHCP");
-  else
-      Serial.println(Ethernet.localIP());*/
   
-  // initialize the digital pin as an output.
-  pinMode(statLedPin, OUTPUT);
+  // Initalize & zero rainMeter
   
-  // Initalize Servo for rainMeter
-  rainMeter.attach(rainMeterPin,544,2370);
   
-  // Get current city
-  switchOldReading = analogRead(citySwitchPin);
-  
-  // Output LCD stuff
   // Request Weather
   Serial.println("Init: Done");
   SendRequest("f");
@@ -379,29 +284,8 @@ void loop() {
   curTime = millis();
   // Check for incomming messages
   packetBuilder();
-  if(switchTime < curTime)
-  {
-    switchTime = curTime + switchDelay;
-    switchCurReading = analogRead(citySwitchPin)/205;
-    //Serial.println(analogRead(citySwitchPin)/205);
-    if(switchCurReading != switchOldReading)
-    {
-      //Serial.println("Chance: "+int(Cities[switchCurReading].rainChance));
-      SetServoPercent(rainMeter,Cities[switchCurReading].rainChance);
-      lcdTime = curTime - 1;
-      switchOldReading = switchCurReading;
-    }
-  }
-  // Status LED task - toggle power every second.
-  if(statLedTime < curTime)
-  {
-    statLedTime = curTime + statLedDelay;
-    if(statLedState == HIGH)
-      statLedState = LOW;
-    else
-      statLedState = HIGH;
-    digitalWrite(statLedPin, statLedState);   // turn the LED on (HIGH is the voltage level)
-  }
+
+  // Motion Sensor
   
   // Update LCD Task - Performs scrolling of data.
   if(lcdTime < curTime)
