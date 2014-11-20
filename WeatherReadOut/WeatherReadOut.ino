@@ -36,7 +36,7 @@ int SetServoPercent(Servo servo, int percent)
   // Sets servo arm to percentage.
   //    0 % is all the way counter clockwise
   //  100 % is all the way clockwise.
-   servo.write((100-percent) *1.8);
+   servo.write((97-percent) *1.8);
 }
 
 
@@ -64,9 +64,14 @@ class CityWeather{
    
    CityWeather(String name, int hi, int low, unsigned humidity, unsigned rain)
    {
-     cityName = name;
-     data = String("Hi: " +hi%1000+String(degree)+"F Low: "+low%1000+String(degree)+"F Humidity: "+humidity%101+'% ');
-     rainChance = rain%101;
+       UpdateWeather(name,hi,low,humidity,rain);
+   }
+   
+   void UpdateWeather(String name, int hi, int low, unsigned humidity, unsigned rain)
+   {
+       cityName = name;
+       data = "High: "+String(hi)+degree+"F Low: "+String(low)+degree+"F "+"Humidity: "+String(humidity)+"% ";
+       rainChance = rain%101;
    }
    
    String GetCityName()
@@ -86,7 +91,6 @@ class CityWeather{
    
    void LoadScrolling(String source, char *dest, unsigned *sIndex)
    {
-     //clearer.toCharArray(dest,17);
      if(source.length() < 16)
      {
        (source+"             ").toCharArray(dest,17);
@@ -126,6 +130,9 @@ unsigned switchCurReading;
 // Time management
 long curTime = 0;
 
+// Update
+const unsigned long updateDelay = 5000; 
+long updateTime = 0;
 // Status LED
 const unsigned long statLedDelay = 1000;
 long statLedTime = statLedDelay;
@@ -135,12 +142,204 @@ const unsigned long rainMeterDelay = 5000;
 unsigned long rainMeterTime = rainMeterDelay;
 
 // LCD
-const unsigned long lcdDelay = 250;
+const unsigned long lcdDelay = 500;
 unsigned long lcdTime = lcdDelay;
 
 // Switch
 const unsigned long switchDelay = 1000;
 unsigned long switchTime = switchDelay;
+
+//---------------------------------------------------------------
+// Comms
+#define WaitingforStart 0
+#define WaitingforEnd 1
+#define PacketComplete 2
+byte SMRTControlID = 1;
+// Status of string being processed;
+byte packetState = WaitingforStart;
+// Incomming char buffer
+#define INCOMINGMAX 2024
+char incoming[2024];
+// partail packet buffer
+#define INBUFFERMAX 8192
+char inbuffer[INBUFFERMAX];
+long inbufferI = 0;
+// full packet buffer
+String packet;
+
+void SendAck(String data)
+{
+  Serial.println("Sending ACK: "+data);
+  unsigned len = data.length();
+  Serial1.print("\x0f\x01\x03");
+  Serial1.print(char(len>>8));
+  Serial1.print(char(len&0xff));
+  Serial1.print(data);
+  Serial1.println("\x04");
+}
+
+void SendRequest(String data)
+{
+  Serial.println("Sending REQ: "+data);
+  unsigned len = data.length();
+  Serial.println("Sending REQ: "+String((len>>8)));
+  Serial.println("Sending REQ: "+String(len&0xff));
+  Serial1.print("\x0f\x01\x05");
+  Serial1.print(char(len>>8));
+  Serial1.print(char(len&0xff));
+  Serial1.print(data);
+  Serial1.println("\x04");
+}
+
+String ParseValue(int &i,String s)
+{
+ while(s != NULL && s[i] != ';') {
+   i++;
+ }
+ int start = ++i;
+ while(s != NULL && (s[i] != ';' && s[i] != '#')) 
+ {
+   i++;
+ }
+ return s.substring(start,i);
+}
+void processWeatherUpdate(int & index,String Data){
+  byte cityNumber = byte(ParseValue(index,Data).toInt())-1;
+  Serial.println("number: "+String(cityNumber));
+  String cityName = ParseValue(index,Data)+' ';
+  Serial.println("name: "+String(cityName));
+  int cityHigh = ParseValue(index,Data).toInt();
+  Serial.println("H: "+String(cityHigh));
+  int cityLow = ParseValue(index,Data).toInt();
+  Serial.println("L: "+String(cityLow));
+  unsigned cityHumid = unsigned(ParseValue(index,Data).toInt());
+  Serial.println("Hu: "+String(cityHumid));
+  unsigned cityPOP = unsigned(ParseValue(index,Data).toInt());
+  Cities[cityNumber].UpdateWeather(cityName,cityHigh,cityLow,cityHumid,cityPOP);
+}
+void packetProcessor(byte id, byte packetStatus, unsigned packetLength, String Data)
+{ // reads data
+  int index = 0;
+  Serial.println("Data: "+Data);
+  if (id == SMRTControlID)
+    {
+      Serial.println(packetStatus);
+      char cmd;
+      if(packetStatus == 2)
+	{
+	  while(Data[index] != 0)
+	    {
+	      Serial.println(Data[index]);
+	      cmd = Data[index++];
+	      if( cmd == 'w')
+		{
+		  processWeatherUpdate(index,Data);
+		}
+	    }
+	  SendAck("s");
+	}
+      if(packetStatus == 6)
+	{
+	  while(Data[index] != 0)
+	    {
+	      cmd = Data[index++];
+	      if( cmd == 'w')
+		{
+		  processWeatherUpdate(index,Data);
+		}
+	    }
+	}
+    }
+}
+
+void packetBuilder()
+{ // builds packet from xbee input
+  if (Serial1.available())
+  {
+    int i = 0;
+     while(Serial1.available())
+     {
+        incoming[i++]= char(Serial1.read());
+     }
+     //Serial.println("Incoming: "+String(incoming));
+     incoming[i++] = NULL;
+     if(packetState == WaitingforStart)
+     {
+       char * location =strchr(incoming,0x0f);
+       if(location != NULL)
+       {
+         char * endL = strchr(location,0x04);
+         int j = i-long(location-incoming);
+         //Serial.println("found: "+String(i-inbufferI));
+         memcpy(inbuffer,location,j);
+         inbufferI += j-1;
+         if(endL)
+           packetState = PacketComplete;
+         else
+           packetState = WaitingforEnd;
+       }
+     }
+     else if(packetState == WaitingforEnd)
+     {
+       char * endL = strchr(incoming,0x04);
+       if(i+inbufferI < INBUFFERMAX)
+       {
+         memcpy(inbuffer+inbufferI,incoming,i);
+         inbufferI += i-1;
+         if(endL)         
+         {
+             packetState = PacketComplete;
+             inbufferI++;
+         }
+       }
+       else
+       {
+         packetState = WaitingforStart;
+       }
+     }
+     /*for(int j = 0; j < 5; j++)
+       Serial.println("found: "+String(j)+" "+String(*(inbuffer+j),HEX));
+     for(int j = 5; j < inbufferI; j++)
+     Serial.println("found: "+String(j)+" "+String(char(*(inbuffer+j)),HEX));*/
+     if(packetState == PacketComplete)
+     {
+       //Serial.println("Processing: ");
+       packetState = WaitingforStart;
+       char* beginD = strchr(inbuffer,0x0f);
+       char* endD = strchr(beginD+5,0x04);
+       //Serial.println(String(long(endD)));
+       char* pendD = endD;
+       while(beginD != 0 && endD!= 0)
+       {
+         *endD = 0;
+         pendD = endD;
+         byte devID = *(beginD+1);
+         byte devStatus = *(beginD+2);
+         unsigned pLength = *(beginD+3)<<8 + *(beginD+4);
+         packet = String(beginD+5);
+         Serial.println("Processing: Start");
+         packetProcessor(devID,devStatus,pLength,packet);
+         Serial.println("Processing: done");
+         
+         beginD = strchr(endD+1,0x0f);
+         if(beginD)
+           endD = strchr(beginD,0x04);
+       }
+       if(beginD)
+       {
+         packetState = WaitingforEnd;
+         int j = inbufferI - (beginD-inbuffer);
+         memcpy(inbuffer,beginD,j);
+         inbufferI = j;
+       }
+       else
+       {
+         inbufferI = 0;
+       }
+     }
+  Serial.println("Made it");
+  }
+}
 
 //---------------------------------------------------------------
 // the setup routine runs once when you press reset:
@@ -154,70 +353,14 @@ void setup() {
   
   // Serial for debugging
   Serial.begin(9600);
-  // Initalize ip and telnet
-  system("telnetd -l /bin/sh");
-  system("touch FINDME.FIND");
-  delay(3000);
+  Serial1.begin(9600);/*
   if (Ethernet.begin(mac) == 0)
       Serial.println("Failed to configure Ethernet using DHCP");
   else
-      Serial.println(Ethernet.localIP());
+      Serial.println(Ethernet.localIP());*/
   
   // initialize the digital pin as an output.
   pinMode(statLedPin, OUTPUT);
-  
-  // Run python script to retrieve weather information.
-  SD.begin();
-  File f = SD.open("/weather.txt");
- for(int i =0; i < 5; i++)
- {
-   int j = 0;
-    while(char(f.peek())!= '\n')
-     {  
-     String temp;
-      while(f.peek() != ',')
-      {
-        temp = temp + char(f.read());
-        if(f.peek() == '\n')
-          break;
-      }
-      Serial.println(temp+j);
-      switch(j++)
-      { // "Hi: 999"+String(degree)+"K Low: 1"+String(degree)+"K Humidity: 100%"+String(blah++)+" ";
-        case 0:
-          Cities[i].cityName = temp;
-        break;
-        case 1:
-          Cities[i].cityName = Cities[i].cityName+','+temp;
-        break;
-        case 2:
-          Cities[i].data = "High: "+temp+degree+"F "; 
-        break;
-        case 3:
-          Cities[i].data = Cities[i].data+"Low: "+temp+degree+"F "; 
-        break;
-        case 4:
-          Cities[i].data = Cities[i].data+"Humidity: "+temp+"% ";
-        break;
-        case 5:
-          Serial.println("String of Chance,"+temp+"\nIndex ="+i);
-          Serial.println(temp.toInt());
-          Cities[i].rainChance = temp.toInt()%101;
-        break;
-        
-      }
-      if(f.peek() != '\n')
-        f.read();
-     } 
-    Serial.println(Cities[i].cityName);
-    Serial.println(Cities[i].data);
-    Serial.println(Cities[i].rainChance);
-   Serial.print(char(f.read()));
-   Serial.println(i);
- }
-   Serial.println("Done");
- 
- 
   
   // Initalize Servo for rainMeter
   rainMeter.attach(rainMeterPin,544,2370);
@@ -232,21 +375,25 @@ void setup() {
   delay(2000);
   lcd.clear();
   lcd.setRGB(255,255,255);
+  // Request Weather
+  Serial.println("Init: Done");
+  SendRequest("f");
 }
 
 // the loop routine runs over and over again forever:
 void loop() {
   // Current time for task timing.
   curTime = millis();
-  
+  // Check for incomming messages
+  packetBuilder();
   if(switchTime < curTime)
   {
     switchTime = curTime + switchDelay;
     switchCurReading = analogRead(citySwitchPin)/205;
-    Serial.println(analogRead(citySwitchPin)/205);
+    //Serial.println(analogRead(citySwitchPin)/205);
     if(switchCurReading != switchOldReading)
     {
-      Serial.println("Chance: "+int(Cities[switchCurReading].rainChance));
+      //Serial.println("Chance: "+int(Cities[switchCurReading].rainChance));
       SetServoPercent(rainMeter,Cities[switchCurReading].rainChance);
       lcdTime = curTime - 1;
       switchOldReading = switchCurReading;
@@ -291,3 +438,4 @@ void loop() {
   }
   */
 }
+
