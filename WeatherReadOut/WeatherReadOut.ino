@@ -11,6 +11,11 @@ int sensorPin = 8;
 // ORANGE -> 10
 // BROWN -> 11
 // BLACK -> 12
+int yellowPin = 9;
+int orangePin = 10;
+int brownPin = 11;
+int blackPin = 12;
+
 //---------------------------------------------------------------
 
 
