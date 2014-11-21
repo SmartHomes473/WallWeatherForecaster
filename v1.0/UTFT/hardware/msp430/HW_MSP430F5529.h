@@ -6,6 +6,9 @@ void UTFT::_set_direction_registers(byte mode)
 		P6DIR |= 0xFF;
 		P7DIR |= 0xFF;
 		P3DIR |= 0xFF;
+		P6SEL &= 0x00;
+		P7SEL &= 0x00;
+		P3SEL &= 0x00;
 		if (mode==16) {
 			#pragma message("_set_direction_registers mode 16 pins not defined!")
 		}
@@ -39,10 +42,9 @@ inline void write_byte_hi(unsigned char ch)
 	P7OUT = (ch >> 5) & 0x1;
 	//P7_0 = (ch >> 5) & 0x1;
 	
-	tmp = ((ch >> 6) & 0x1) << 6;
-	tmp = ((ch >> 7) & 0x1) << 5;
-	P3OUT = tmp;
-	
+	tmp = ((ch >> 6) & 0x1) << 6;	
+	tmp |= ((ch >> 7) & 0x1) << 5;
+	P3OUT |= tmp;	
 	/*P3_6 = (ch >> 6) & 0x1;
 	P3_5 = (ch >> 7) & 0x1;*/
 }

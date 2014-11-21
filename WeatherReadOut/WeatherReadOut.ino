@@ -1,6 +1,20 @@
-
 //---------------------------------------------------------------
 // Pin parameters - All pins owned by devices.
+
+// PIR MOTION SENSOR
+// TRIGGER -> NC
+// OUTPUT -> 8
+int sensorPin = 8;
+
+// STEPPER MOTOR
+// YELLOW -> 9
+// ORANGE -> 10
+// BROWN -> 11
+// BLACK -> 12
+int yellowPin = 9;
+int orangePin = 10;
+int brownPin = 11;
+int blackPin = 12;
 
 //---------------------------------------------------------------
 
@@ -62,6 +76,24 @@ class CityWeather{
 };
 
 CityWeather Cities[5];
+
+//-----------------------------------------------
+// ISR
+/*
+// ISR for LCD toggle
+void lcdToggle(){
+   // Toggle the LCD flag
+  lcdState = !lcdState;
+  // Turn it off or on
+  if (lcdState){
+    LCD.lcdOn();
+  }
+  else {
+    LCD.lcdOff();
+  }
+}
+*/
+  
    
 //---------------------------------------------------------------
 // Time management
@@ -72,6 +104,7 @@ const unsigned long updateDelay = 5000;
 long updateTime = 0;
 
 // Motion Sensor
+int lcdState = HIGH;
 
 // Rain Meter
 const unsigned long rainMeterDelay = 5000;
@@ -219,6 +252,12 @@ void packetBuilder()
        if(location != NULL)
        {
          char * endL = strchr(location,0x04);
+         
+         while( endL != NULL && ((endL - location) < 4))
+         {
+             endL = strchr(endL+1,0x04);
+         }
+         
          int j = i-long(location-incoming);
          //Serial.println("found: "+String(i-inbufferI));
          memcpy(inbuffer,location,j);
@@ -320,6 +359,9 @@ void setup() {
   
   // Initalize & zero rainMeter
   
+  // Set up PIR sensor output pin
+  pinMode(sensorPin, INPUT_PULLUP);
+  //attachInterrupt(sensorPin, lcdToggle, CHANGE);
   
   // Request Weather
   Serial.println("Init: Done");
