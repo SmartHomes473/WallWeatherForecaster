@@ -1,5 +1,3 @@
-
-/*
 //---------------------------------------------------------------
 // Pin parameters - All pins owned by devices.
 
@@ -27,9 +25,9 @@ class CityWeather{
     // City Name
     String cityName;
     // High forecasted temperature
-    String highTemp;
+    int highTemp;
     // Low forecasted temperature
-    String lowTemp;
+    int lowTemp;
     // Humidity percentage
     String humidityPercent;
     
@@ -48,8 +46,8 @@ class CityWeather{
    void UpdateWeather(String name, int hi, int low, unsigned humidity, unsigned rain)
    {
        cityName = name;
-       highTemp = String(hi);
-       lowTemp = String(low);
+       highTemp = hi;
+       lowTemp = low;
        humidityPercent = String(humidity);
        rainChance = rain%101;
    }
@@ -213,6 +211,12 @@ void packetBuilder()
        if(location != NULL)
        {
          char * endL = strchr(location,0x04);
+         
+         while( endL != NULL && ((endL - location) < 4))
+         {
+             endL = strchr(endL+1,0x04);
+         }
+         
          int j = i-long(location-incoming);
          //Serial.println("found: "+String(i-inbufferI));
          memcpy(inbuffer,location,j);
@@ -547,4 +551,3 @@ void loop() {
     //settings = 0;  
   }
 }
-*/
