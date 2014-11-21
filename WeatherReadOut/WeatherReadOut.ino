@@ -31,12 +31,19 @@ class CityWeather{
     String lowTemp;
     // Humidity percentage
     String humidityPercent;
+    // Condition
+    String condition;
     
 
    CityWeather() {
      // Default constructor
      cityName = "Bum Fuk, Egypt"+String(blah);
      rainChance = 50; 
+     blah++;
+     highTemp = "-7";
+     lowTemp = "-32";
+     humidityPercent = "56";
+     condition = "Cold as Shit";
    }
    
    CityWeather(String name, int hi, int low, unsigned humidity, unsigned rain)
@@ -279,6 +286,20 @@ void packetBuilder()
   //Serial.println("Made it");
   }
 }
+String displayTemp(int temp_index, String temperature) {
+  //Fahrenheit
+  if(temp_index == 0) {
+    return temperature;
+  }
+  //Celsius
+  else if(temp_index == 1) {
+    return String((int)((temperature.toInt()-32)/1.8));
+  }
+  //Kelvin
+  else if(temp_index == 2) {
+    return String((int)(((temperature.toInt()-32)/1.8)+273.15));
+  }  
+}
 
 //---------------------------------------------------------------
 // the setup routine runs once when you press reset:
@@ -289,8 +310,8 @@ void setup() {
   myTouch.InitTouch(LANDSCAPE);
   myTouch.setPrecision(PREC_MEDIUM);
   myGLCD.clrScr();
-  city = 1;
-  new_city = 1;
+  city = 0;
+  new_city = 0;
   settings = 0;
   update_i = 0; //index to update array
   temp_i = 0; //index to temp array
@@ -337,51 +358,54 @@ void loop() {
   myGLCD.print("PM", 290, 100);
   
   //Print Current City
-  if(city == 1) {
-    myGLCD.print("Ann Arbor, MI", CENTER, 175);
-  }
-  else if(city == 2) {
-    myGLCD.print("Austin, TX", CENTER, 175);
-  }
-  else if(city == 3) {
-    myGLCD.print("London, England", CENTER, 175);
-  }
-  else if(city == 4) {
-    myGLCD.print("Rio de Janiero, Brazil", CENTER, 175);
-  }
-  else if(city == 5) {
-    myGLCD.print("Los Angeles, CA", CENTER, 175);
-  }
+  myGLCD.print(Cities[city].cityName, CENTER, 175);
   
   //Print Condition
-  myGLCD.print("Condition: Snowy as Hell", 0, 240);
+  myGLCD.print("Condition:", 0, 240);
+  myGLCD.print(Cities[city].condition, 163, 240);
   
   //Print High Temperature
-  myGLCD.print("High Temp:", 0, 270+30);
+  myGLCD.print("High Temp:", 0, 300);
   myGLCD.setFont(SevenSegNumFont);
-  myGLCD.print("45", 160, 250+30);
+  if(displayTemp(temp_i, Cities[city].highTemp).toInt() < 0) {
+    myGLCD.setFont(BigFont);
+    myGLCD.print("-", 160, 300);
+    myGLCD.setFont(SevenSegNumFont);
+    myGLCD.print(String(abs(displayTemp(temp_i, Cities[city].highTemp).toInt())), 175, 280);
+  }
+  else {
+    myGLCD.print(displayTemp(temp_i, Cities[city].highTemp), 160, 280);
+  }
   myGLCD.setFont(BigFont);
-  myGLCD.print(temp[temp_i], 220, 250+30);
+  myGLCD.print(temp[temp_i], 220+35, 280);
   
   //Print Low Temperature
-  myGLCD.print("Low Temp:", 0, 350+30);
+  myGLCD.print("Low Temp:", 0, 380);
   myGLCD.setFont(SevenSegNumFont);
-  myGLCD.print("28", 160, 330+30);
+  if(displayTemp(temp_i, Cities[city].lowTemp).toInt() < 0) {
+    myGLCD.setFont(BigFont);
+    myGLCD.print("-", 160, 380);
+    myGLCD.setFont(SevenSegNumFont);
+    myGLCD.print(String(abs(displayTemp(temp_i, Cities[city].lowTemp).toInt())), 175, 360);   
+  }
+  else {
+    myGLCD.print(displayTemp(temp_i, Cities[city].lowTemp), 160, 360);
+  }
   myGLCD.setFont(BigFont);
-  myGLCD.print(temp[temp_i], 220, 330+30); 
+  myGLCD.print(temp[temp_i], 220+35, 360); 
   
   //Print Humidity %
   myGLCD.print("Humidity:", 0, 430+30);
   myGLCD.setFont(SevenSegNumFont);
-  myGLCD.print("56", 160, 410+30);
+  myGLCD.print(Cities[city].humidityPercent, 160, 410+30);
   myGLCD.setFont(BigFont);
-  myGLCD.print("%", 220, 410+30); 
+  myGLCD.print("%", 220+35, 410+30); 
   
   if(settings == 0) {
     //Draw Cities/Settings Boxes
     myGLCD.print("Stored Cities", CENTER, 520+50);
     myGLCD.setFont(SevenSegNumFont);
-    if(city == 1) {
+    if(city == 0) {
       myGLCD.setColor(0, 0, 255); 
       myGLCD.drawRect(51, 550+50, 105, 625+50);
       myGLCD.print("1", 55, 560+50);
@@ -395,7 +419,7 @@ void loop() {
       myGLCD.drawRect(375, 550+50, 429, 625+50);
       myGLCD.print("5", 386, 560+50);  
     }
-    else if(city == 2) {
+    else if(city == 1) {
       myGLCD.drawRect(51, 550+50, 105, 625+50);
       myGLCD.print("1", 55, 560+50);
       myGLCD.setColor(0, 0, 255); //draw in blue
@@ -410,7 +434,7 @@ void loop() {
       myGLCD.print("5", 386, 560+50);
       myGLCD.drawRect(375, 550+50, 429, 625+50);   
     }
-    else if(city == 3) {
+    else if(city == 2) {
       myGLCD.drawRect(51, 550+50, 105, 625+50);
       myGLCD.print("1", 55, 560+50); 
       myGLCD.drawRect(132, 550+50, 186, 625+50);
@@ -424,7 +448,7 @@ void loop() {
       myGLCD.drawRect(375, 550+50, 429, 625+50);
       myGLCD.print("5", 386, 560+50);
     }
-    else if(city == 4) {
+    else if(city == 3) {
       myGLCD.drawRect(51, 550+50, 105, 625+50);
       myGLCD.print("1", 55, 560+50);
       myGLCD.drawRect(132, 550+50, 186, 625+50);
@@ -438,7 +462,7 @@ void loop() {
       myGLCD.drawRect(375, 550+50, 429, 625+50);
       myGLCD.print("5", 386, 560+50); 
     }
-    else if(city == 5) {
+    else if(city == 4) {
       myGLCD.drawRect(51, 550+50, 105, 625+50);
       myGLCD.print("1", 55, 560+50);
       myGLCD.drawRect(132, 550+50, 186, 625+50);
@@ -464,19 +488,19 @@ void loop() {
       y = myTouch.getY();
       if(x >= 125 & x <= 200) {
         if(y >= 51 & y <= 105){
-          new_city = 1;
+          new_city = 0;
         }
         else if(y >= 132 & y <= 186){
-          new_city = 2;
+          new_city = 1;
         }
         else if(y >= 213 & y <= 267){
-          new_city = 3;
+          new_city = 2;
         }
         else if(y >= 294 & y <= 348){
-          new_city = 4;
+          new_city = 3;
         }
         else if(y >= 375 & y <= 429){
-          new_city = 5;
+          new_city = 4;
         }    
       }
       else if(x >= 35 & x <= 90) {
@@ -501,12 +525,36 @@ void loop() {
     myGLCD.drawRect(410,550,450,580);
     myGLCD.print(">",420,560);
     
-    myGLCD.drawRect(80,625,160,675);
-    myGLCD.print("F",110,645);
-    myGLCD.drawRect(200,625,280,675);
-    myGLCD.print("C", 230, 645);
-    myGLCD.drawRect(320,625,400,675);
-    myGLCD.print("K", 350, 645);
+    if(temp_i == 0) {
+      myGLCD.setColor(0,0,255);
+      myGLCD.drawRect(80,625,160,675);
+      myGLCD.print("F",110,645);
+      myGLCD.setColor(255,0,0);
+      myGLCD.drawRect(200,625,280,675);
+      myGLCD.print("C", 230, 645);
+      myGLCD.drawRect(320,625,400,675);
+      myGLCD.print("K", 350, 645);
+    }
+    else if(temp_i == 1) {
+      myGLCD.drawRect(80,625,160,675);
+      myGLCD.print("F",110,645);
+      myGLCD.setColor(0,0,255);
+      myGLCD.drawRect(200,625,280,675);
+      myGLCD.print("C", 230, 645);
+      myGLCD.setColor(255,0,0);
+      myGLCD.drawRect(320,625,400,675);
+      myGLCD.print("K", 350, 645);
+    }
+    else if(temp_i == 2) {
+      myGLCD.drawRect(80,625,160,675);
+      myGLCD.print("F",110,645);
+      myGLCD.drawRect(200,625,280,675);
+      myGLCD.print("C", 230, 645);
+      myGLCD.setColor(0,0,255);
+      myGLCD.drawRect(320,625,400,675);
+      myGLCD.print("K", 350, 645);
+      myGLCD.setColor(255,0,0);
+    }
     
     myGLCD.drawRect(80,725,200,775);
     myGLCD.print("Update", 95, 740);
@@ -518,20 +566,23 @@ void loop() {
       x = myTouch.getX();
       y = myTouch.getY();
       //temp buttons
-      if(x >= 125 & x <= 175) {
-        if(y >= 80 & y <= 160){
+      if(x >= 100 & x <= 200) {
+        if(y >= 60 & y < 180){
           temp_i = 0;
+          myGLCD.clrScr();
         }
-        else if(y >= 200 & y <= 280) {
+        else if(y >= 180 & y < 300) {
           temp_i = 1; 
+          myGLCD.clrScr();
         }
-        else if(y >= 320 & y <= 400) {
+        else if(y >= 300 & y <= 420) {
           temp_i = 2; 
+          myGLCD.clrScr();
         }
       }
-      else if(x >= 220 & x <= 250) {
+      else if(x >= 210 & x <= 260) {
         // < button pressed
-        if(y >= 265 & y <= 305) {
+        if(y >= 250 & y <= 320) {
           if(update_i == 0) {
             update_i = 23;
           }
@@ -540,7 +591,7 @@ void loop() {
           }
         }
         //> button pressed
-        else if(y >= 410 & y <= 450) {
+        else if(y >= 395 & y <= 470) {
           if(update_i == 23) {
             update_i = 0;
           }
@@ -549,13 +600,13 @@ void loop() {
           }  
         }
       }
-      else if(x >= 25 & x <= 75) {
+      else if(x >= 0 & x < 100) {
         //Update button pressed
-        if(y >= 80 & y <= 200) {
+        if(y >= 60 & y < 240) {
           //do update stuff
         }  
         //settings button pressed
-        else if(y >= 280 & y <= 400) {
+        else if(y >= 240 & y <= 420) {
           settings = 0;  
           myGLCD.clrScr();
         }
