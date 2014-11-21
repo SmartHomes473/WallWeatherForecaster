@@ -1,4 +1,4 @@
-/*
+
 //---------------------------------------------------------------
 // Pin parameters - All pins owned by devices.
 
@@ -508,12 +508,17 @@ void loop() {
     myGLCD.drawRect(320,625,400,675);
     myGLCD.print("K", 350, 645);
     
+    myGLCD.drawRect(80,725,200,775);
+    myGLCD.print("Update", 95, 740);
+    myGLCD.drawRect(280,725,400,775);
+    myGLCD.print("Back", 305, 740);
+    
     if(myTouch.dataAvailable()) {
       myTouch.read();
       x = myTouch.getX();
       y = myTouch.getY();
-      Serial.print(String(x) +" x "+ String(y));
-      if(x >= 125 & x <= 175) { //temp buttons
+      //temp buttons
+      if(x >= 125 & x <= 175) {
         if(y >= 80 & y <= 160){
           temp_i = 0;
         }
@@ -525,7 +530,8 @@ void loop() {
         }
       }
       else if(x >= 220 & x <= 250) {
-        if(y >= 265 & y <= 305) { //< button pressed
+        // < button pressed
+        if(y >= 265 & y <= 305) {
           if(update_i == 0) {
             update_i = 23;
           }
@@ -533,7 +539,8 @@ void loop() {
             update_i = update_i - 1;  
           }
         }
-        else if(y >= 410 & y <= 450) { //> button pressed
+        //> button pressed
+        else if(y >= 410 & y <= 450) {
           if(update_i == 23) {
             update_i = 0;
           }
@@ -542,8 +549,17 @@ void loop() {
           }  
         }
       }
-    }
-    //settings = 0;  
+      else if(x >= 25 & x <= 75) {
+        //Update button pressed
+        if(y >= 80 & y <= 200) {
+          //do update stuff
+        }  
+        //settings button pressed
+        else if(y >= 280 & y <= 400) {
+          settings = 0;  
+          myGLCD.clrScr();
+        }
+      }
+    } 
   }
 }
-*/
