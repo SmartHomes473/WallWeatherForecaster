@@ -22,12 +22,62 @@ int blackPin = 12;
 //---------------------------------------------------------------
 // rainMeter - Chance of rain
 int percentage = 0;
-
-int SetServoPercent(int p)
-{ 
+class RainMeter{
+  public:
+  // Current Chance
+  int chance;
+  // Current State
+  int state;
+  // Pins
+  int yellow, orange,brown,black;
   
-}
+  RainMeter(int yel, int org, int brn, int blk){
+    state = 0;
+    yellow = yel;
+    orange = org;
+    brown  = brn;
+    black  = blk;
+    pinMode(yellow, OUTPUT);
+    pinMode(orange, OUTPUT);
+    pinMode(brown, OUTPUT);
+    pinMode(black, OUTPUT);
+    SetState(state);
+    ResetToZero();
+  }
+  
+  void ResetToZero(){
+    
+  }
+  
+  void SetState(int nextState){
+    switch(nextState)
+    {
+       case 0:
+         
+       break; 
+       case 1:
+         
+       break; 
+       case 2:
+         
+       break; 
+       case 3:
+         
+       break; 
+       case 5:
+         
+       break;
+       default:
+         
+       break; 
+    }
+  }
+  void SetChance(int pop){
+    
+  }
+};
 
+RainMeter * Meter;
 
 //---------------------------------------------------------------
 // LCD - Displays temp, humidity etc.
@@ -191,7 +241,7 @@ String ParseValue(int &i,String s)
 }
 
 void processWeatherUpdate(int & index,String Data){
-  Serial.println(Data);
+  Serial.println(Data+index);
   // Update Weather Forecast
   byte cityNumber = byte(ParseValue(index,Data).toInt())-1;
   String cityName = ParseValue(index,Data)+' ';
@@ -344,7 +394,7 @@ String displayTemp(int temp_index, String temperature) {
 //---------------------------------------------------------------
 // the setup routine runs once when you press reset:
 void setup() {
-  // LCD
+  delay(1000);
   // Setup the LCD
   myGLCD.InitLCD(PORTRAIT);
   myTouch.InitTouch(LANDSCAPE);
