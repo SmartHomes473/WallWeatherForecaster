@@ -372,7 +372,6 @@ void setup() {
   update_i = 0; //index to update array
   temp_i = 0; //index to temp array
   // Comms
-  /*
   Serial.begin(9600);
   Serial1.begin(9600);
   pinMode(sensorPin, INPUT_PULLUP);
@@ -384,7 +383,7 @@ void setup() {
   
   // Request Weather
   Serial.println("Init: Done");
-  SendRequest("f");*/
+  SendRequest("f");
 }
 
 // the loop routine runs over and over again forever:
