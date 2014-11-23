@@ -158,22 +158,22 @@ void SendAck(String data)
 {
   // Sends formated message of acknowledge
   unsigned len = data.length();
-  Serial.print("\x0f\x01\x03");
-  Serial.print(char(len>>8));
-  Serial.print(char(len&0xff));
-  Serial.print(data);
-  Serial.println("\x04");
+  Serial1.print("\x0f\x01\x03");
+  Serial1.print(char(len>>8));
+  Serial1.print(char(len&0xff));
+  Serial1.print(data);
+  Serial1.println("\x04");
 }
 
 void SendRequest(String data)
 {
   // Sends formated request
   unsigned len = data.length();
-  Serial.print("\x0f\x01\x05");
-  Serial.print(char(len>>8));
-  Serial.print(char(len&0xff));
-  Serial.print(data);
-  Serial.println("\x04");
+  Serial1.print("\x0f\x01\x05");
+  Serial1.print(char(len>>8));
+  Serial1.print(char(len&0xff));
+  Serial1.print(data);
+  Serial1.println("\x04");
 }
 
 String ParseValue(int &i,String s)
@@ -191,6 +191,7 @@ String ParseValue(int &i,String s)
 }
 
 void processWeatherUpdate(int & index,String Data){
+  Serial.println(Data);
   // Update Weather Forecast
   byte cityNumber = byte(ParseValue(index,Data).toInt())-1;
   String cityName = ParseValue(index,Data)+' ';
@@ -237,14 +238,14 @@ void packetProcessor(byte id, byte packetStatus, unsigned packetLength, String D
 
 void packetBuilder()
 { // builds packet from xbee input
-  if (Serial.available())
+  if (Serial1.available())
   {
     int i = 0;
-     while(Serial.available())
+     while(Serial1.available())
      {
-        incoming[i++]= char(Serial.read());
+        incoming[i++]= char(Serial1.read());
      }
-     //Serial.println("Incoming: "+String(incoming));
+     //Serial1.println("Incoming: "+String(incoming));
      incoming[i++] = NULL;
      if(packetState == WaitingforStart)
      {
@@ -259,7 +260,7 @@ void packetBuilder()
          }
          
          int j = i-long(location-incoming);
-         //Serial.println("found: "+String(i-inbufferI));
+         //Serial1.println("found: "+String(i-inbufferI));
          memcpy(inbuffer,location,j);
          inbufferI += j-1;
          if(endL)
@@ -288,11 +289,11 @@ void packetBuilder()
      }
      if(packetState == PacketComplete)
      {
-       //Serial.println("Processing: ");
+       //Serial1.println("Processing: ");
        packetState = WaitingforStart;
        char* beginD = strchr(inbuffer,0x0f);
        char* endD = strchr(beginD+5,0x04);
-       //Serial.println(String(long(endD)));
+       //Serial1.println(String(long(endD)));
        char* pendD = endD;
        while(beginD != 0 && endD!= 0)
        {
@@ -356,7 +357,8 @@ void setup() {
   temp_i = 0; //index to temp array
   // Comms
   Serial.begin(9600);
-  
+  Serial1.begin(9600);
+  pinMode(sensorPin, INPUT_PULLUP);
   // Initalize & zero rainMeter
   
   // Set up PIR sensor output pin
@@ -374,9 +376,14 @@ void loop() {
   curTime = millis();
   // Check for incomming messages
   packetBuilder();
-
   // Motion Sensor
-  
+  /*
+  if(curTime > rainMeterTime)
+  {
+   rainMeterTime += rainMeterDelay;
+   SendRequest("f"); 
+  }
+  */
   // Update LCD Task - Performs scrolling of data.
 
   //Clear screen logic
