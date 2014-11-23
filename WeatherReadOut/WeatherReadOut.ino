@@ -104,7 +104,7 @@ class CityWeather{
      cityName = "Bum Fuk, Egypt"+String(blah);
      rainChance = 50; 
      blah++;
-     highTemp = "-7";
+     highTemp = "100";
      lowTemp = "-32";
      humidityPercent = "56";
      condition = "Cold as Shit";
@@ -376,6 +376,8 @@ void packetBuilder()
   //Serial.println("Made it");
   }
 }
+
+//This functions takes in a string temperature and converts it to F, C, or K
 String displayTemp(int temp_index, String temperature) {
   //Fahrenheit
   if(temp_index == 0) {
@@ -391,11 +393,25 @@ String displayTemp(int temp_index, String temperature) {
   }  
 }
 
+//This function returns the number of digits in a string containing a number
+int digitCounter(String temp) {
+  if(abs(temp.toInt()) < 100 & abs(temp.toInt()) >= 10) {
+    return 2;
+  }
+  else if(abs(temp.toInt()) < 10) {
+    return 1;
+  }
+  else if(abs(temp.toInt()) >= 100) {
+    return 3;
+  }
+}
+
 //---------------------------------------------------------------
 // the setup routine runs once when you press reset:
 void setup() {
   delay(1000);
   // Setup the LCD
+  delay(1000);
   myGLCD.InitLCD(PORTRAIT);
   myTouch.InitTouch(LANDSCAPE);
   myTouch.setPrecision(PREC_MEDIUM);
@@ -466,113 +482,163 @@ void loop() {
   //Print High Temperature
   myGLCD.print("High Temp:", 0, 300);
   myGLCD.setFont(SevenSegNumFont);
-  if(displayTemp(temp_i, Cities[city].highTemp).toInt() < 0) {
-    myGLCD.setFont(BigFont);
-    myGLCD.print("-", 160, 300);
-    myGLCD.setFont(SevenSegNumFont);
+    
+  //if displaying triple digit number
+  if(digitCounter(displayTemp(temp_i, Cities[city].highTemp)) == 3) {
+    //Negative Temp, print '-' sign
+    if(displayTemp(temp_i, Cities[city].highTemp).toInt() < 0) {
+      myGLCD.setFont(BigFont);
+      myGLCD.print("-", 160, 300);
+      myGLCD.setFont(SevenSegNumFont);
+    }
     myGLCD.print(String(abs(displayTemp(temp_i, Cities[city].highTemp).toInt())), 175, 280);
   }
-  else {
-    myGLCD.print(displayTemp(temp_i, Cities[city].highTemp), 160, 280);
+  else if(digitCounter(displayTemp(temp_i, Cities[city].highTemp)) == 2) {
+    //Negative Temp, print '-' sign
+    if(displayTemp(temp_i, Cities[city].highTemp).toInt() < 0) {
+      myGLCD.setFont(BigFont);
+      myGLCD.print("-", 192, 300);
+      myGLCD.setFont(SevenSegNumFont);
+    }
+    myGLCD.print(String(abs(displayTemp(temp_i, Cities[city].highTemp).toInt())), 207, 280);
   }
+  else if(digitCounter(displayTemp(temp_i, Cities[city].highTemp)) == 1) {
+    //Negative Temp, print '-' sign
+    if(displayTemp(temp_i, Cities[city].highTemp).toInt() < 0) {
+      myGLCD.setFont(BigFont);
+      myGLCD.print("-", 224, 300);
+      myGLCD.setFont(SevenSegNumFont);
+    }
+    myGLCD.print(String(abs(displayTemp(temp_i, Cities[city].highTemp).toInt())), 239, 280);
+  }
+
   myGLCD.setFont(BigFont);
-  myGLCD.print(temp[temp_i], 220+35, 280);
+  myGLCD.print(temp[temp_i], 270, 280);
   
-  //Print Low Temperature
-  myGLCD.print("Low Temp:", 0, 380);
-  myGLCD.setFont(SevenSegNumFont);
-  if(displayTemp(temp_i, Cities[city].lowTemp).toInt() < 0) {
-    myGLCD.setFont(BigFont);
-    myGLCD.print("-", 160, 380);
+  //if displaying triple digit number
+  if(digitCounter(displayTemp(temp_i, Cities[city].lowTemp)) == 3) {
+    //Print Low Temperature
+    myGLCD.print("Low Temp:", 0, 380);
     myGLCD.setFont(SevenSegNumFont);
-    myGLCD.print(String(abs(displayTemp(temp_i, Cities[city].lowTemp).toInt())), 175, 360);   
+    if(displayTemp(temp_i, Cities[city].lowTemp).toInt() < 0) {
+      myGLCD.setFont(BigFont);
+      myGLCD.print("-", 160, 380);
+      myGLCD.setFont(SevenSegNumFont);
+    }
+    myGLCD.print(String(abs(displayTemp(temp_i, Cities[city].lowTemp).toInt())), 175, 360);
   }
-  else {
-    myGLCD.print(displayTemp(temp_i, Cities[city].lowTemp), 160, 360);
+  else if(digitCounter(displayTemp(temp_i, Cities[city].lowTemp)) == 2) {
+    //Print Low Temperature
+    myGLCD.print("Low Temp:", 0, 380);
+    myGLCD.setFont(SevenSegNumFont);
+    if(displayTemp(temp_i, Cities[city].lowTemp).toInt() < 0) {
+      myGLCD.setFont(BigFont);
+      myGLCD.print("-", 192, 380);
+      myGLCD.setFont(SevenSegNumFont);
+    }
+    myGLCD.print(String(abs(displayTemp(temp_i, Cities[city].lowTemp).toInt())), 207, 360);
   }
+  else if(digitCounter(displayTemp(temp_i, Cities[city].lowTemp)) == 1) {
+    //Print Low Temperature
+    myGLCD.print("Low Temp:", 0, 380);
+    myGLCD.setFont(SevenSegNumFont);
+    if(displayTemp(temp_i, Cities[city].lowTemp).toInt() < 0) {
+      myGLCD.setFont(BigFont);
+      myGLCD.print("-", 224, 380);
+      myGLCD.setFont(SevenSegNumFont);
+    }
+    myGLCD.print(String(abs(displayTemp(temp_i, Cities[city].lowTemp).toInt())), 239, 360);
+  }  
+  
   myGLCD.setFont(BigFont);
-  myGLCD.print(temp[temp_i], 220+35, 360); 
+  myGLCD.print(temp[temp_i], 270, 360); 
   
   //Print Humidity %
-  myGLCD.print("Humidity:", 0, 430+30);
+  myGLCD.print("Humidity:", 0, 460);
   myGLCD.setFont(SevenSegNumFont);
-  myGLCD.print(Cities[city].humidityPercent, 160, 410+30);
+  if(digitCounter(Cities[city].humidityPercent) == 3)
+    myGLCD.print(Cities[city].humidityPercent, 175, 440);
+  else if(digitCounter(Cities[city].humidityPercent) == 2)
+    myGLCD.print(Cities[city].humidityPercent, 207, 440);
+  else if(digitCounter(Cities[city].humidityPercent) == 1)
+    myGLCD.print(Cities[city].humidityPercent, 239, 440);
+    
   myGLCD.setFont(BigFont);
-  myGLCD.print("%", 220+35, 410+30); 
+  myGLCD.print("%", 270, 440); 
   
   if(settings == 0) {
     //Draw Cities/Settings Boxes
-    myGLCD.print("Stored Cities", CENTER, 520+50);
+    myGLCD.print("Stored Cities", CENTER, 570);
     myGLCD.setFont(SevenSegNumFont);
     if(city == 0) {
       myGLCD.setColor(0, 0, 255); 
-      myGLCD.drawRect(51, 550+50, 105, 625+50);
-      myGLCD.print("1", 55, 560+50);
+      myGLCD.drawRect(51, 600, 105, 675);
+      myGLCD.print("1", 55, 610);
       myGLCD.setColor(255, 0, 0); 
-      myGLCD.drawRect(132, 550+50, 186, 625+50);
-      myGLCD.print("2", 143, 560+50);
-      myGLCD.drawRect(213, 550+50, 267, 625+50);
-      myGLCD.print("3", 224, 560+50);
-      myGLCD.drawRect(294, 550+50, 348, 625+50);
-      myGLCD.print("4", 305, 560+50);
-      myGLCD.drawRect(375, 550+50, 429, 625+50);
-      myGLCD.print("5", 386, 560+50);  
+      myGLCD.drawRect(132, 600, 186, 675);
+      myGLCD.print("2", 143, 610);
+      myGLCD.drawRect(213, 600, 267, 675);
+      myGLCD.print("3", 224, 610);
+      myGLCD.drawRect(294, 600, 348, 675);
+      myGLCD.print("4", 305, 610);
+      myGLCD.drawRect(375, 600, 429, 675);
+      myGLCD.print("5", 386, 610);  
     }
     else if(city == 1) {
-      myGLCD.drawRect(51, 550+50, 105, 625+50);
-      myGLCD.print("1", 55, 560+50);
+      myGLCD.drawRect(51, 600, 105, 675);
+      myGLCD.print("1", 55, 610);
       myGLCD.setColor(0, 0, 255); //draw in blue
-      myGLCD.drawRect(132, 550+50, 186, 625+50);
-      myGLCD.print("2", 143, 560+50);
+      myGLCD.drawRect(132, 600, 186, 675);
+      myGLCD.print("2", 143, 610);
       myGLCD.setColor(255, 0, 0); //draw in red
-      myGLCD.drawRect(213, 550+50, 267, 625+50);
-      myGLCD.print("3", 224, 560+50);
-      myGLCD.drawRect(294, 550+50, 348, 625+50);
-      myGLCD.print("4", 305, 560+50);
-      myGLCD.drawRect(375, 550+50, 429, 625+50);
-      myGLCD.print("5", 386, 560+50);
-      myGLCD.drawRect(375, 550+50, 429, 625+50);   
+      myGLCD.drawRect(213, 600, 267, 675);
+      myGLCD.print("3", 224, 610);
+      myGLCD.drawRect(294, 600, 348, 675);
+      myGLCD.print("4", 305, 610);
+      myGLCD.drawRect(375, 600, 429, 675);
+      myGLCD.print("5", 386, 610);
+      myGLCD.drawRect(375, 600, 429, 675);   
     }
     else if(city == 2) {
-      myGLCD.drawRect(51, 550+50, 105, 625+50);
-      myGLCD.print("1", 55, 560+50); 
-      myGLCD.drawRect(132, 550+50, 186, 625+50);
-      myGLCD.print("2", 143, 560+50);
+      myGLCD.drawRect(51, 600, 105, 675);
+      myGLCD.print("1", 55, 610); 
+      myGLCD.drawRect(132, 600, 186, 675);
+      myGLCD.print("2", 143, 610);
       myGLCD.setColor(0, 0, 255); //draw in blue
-      myGLCD.drawRect(213, 550+50, 267, 625+50);
-      myGLCD.print("3", 224, 560+50);
+      myGLCD.drawRect(213, 600, 267, 675);
+      myGLCD.print("3", 224, 610);
       myGLCD.setColor(255, 0, 0); //draw in red
-      myGLCD.drawRect(294, 550+50, 348, 625+50);
-      myGLCD.print("4", 305, 560+50);
-      myGLCD.drawRect(375, 550+50, 429, 625+50);
-      myGLCD.print("5", 386, 560+50);
+      myGLCD.drawRect(294, 600, 348, 675);
+      myGLCD.print("4", 305, 610);
+      myGLCD.drawRect(375, 600, 429, 675);
+      myGLCD.print("5", 386, 610);
     }
     else if(city == 3) {
-      myGLCD.drawRect(51, 550+50, 105, 625+50);
-      myGLCD.print("1", 55, 560+50);
-      myGLCD.drawRect(132, 550+50, 186, 625+50);
-      myGLCD.print("2", 143, 560+50);
-      myGLCD.drawRect(213, 550+50, 267, 625+50);
-      myGLCD.print("3", 224, 560+50);
+      myGLCD.drawRect(51, 600, 105, 675);
+      myGLCD.print("1", 55, 610);
+      myGLCD.drawRect(132, 600, 186, 675);
+      myGLCD.print("2", 143, 610);
+      myGLCD.drawRect(213, 600, 267, 675);
+      myGLCD.print("3", 224, 610);
       myGLCD.setColor(0, 0, 255); //draw in blue
-      myGLCD.drawRect(294, 550+50, 348, 625+50);
-      myGLCD.print("4", 305, 560+50);
+      myGLCD.drawRect(294, 600, 348, 675);
+      myGLCD.print("4", 305, 610);
       myGLCD.setColor(255, 0, 0); //draw in red
-      myGLCD.drawRect(375, 550+50, 429, 625+50);
-      myGLCD.print("5", 386, 560+50); 
+      myGLCD.drawRect(375, 600, 429, 675);
+      myGLCD.print("5", 386, 610); 
     }
     else if(city == 4) {
-      myGLCD.drawRect(51, 550+50, 105, 625+50);
-      myGLCD.print("1", 55, 560+50);
-      myGLCD.drawRect(132, 550+50, 186, 625+50);
-      myGLCD.print("2", 143, 560+50);
-      myGLCD.drawRect(213, 550+50, 267, 625+50);
-      myGLCD.print("3", 224, 560+50);
-      myGLCD.drawRect(294, 550+50, 348, 625+50);
-      myGLCD.print("4", 305, 560+50);
+      myGLCD.drawRect(51, 600, 105, 675);
+      myGLCD.print("1", 55, 610);
+      myGLCD.drawRect(132, 600, 186, 675);
+      myGLCD.print("2", 143, 610);
+      myGLCD.drawRect(213, 600, 267, 675);
+      myGLCD.print("3", 224, 610);
+      myGLCD.drawRect(294, 600, 348, 675);
+      myGLCD.print("4", 305, 610);
       myGLCD.setColor(0, 0, 255); //draw in blue
-      myGLCD.drawRect(375, 550+50, 429, 625+50);
-      myGLCD.print("5", 386, 560+50); 
+      myGLCD.drawRect(375, 600, 429, 675);
+      myGLCD.print("5", 386, 610); 
      myGLCD.setColor(255, 0, 0); //draw in red 
     }
     
