@@ -1330,9 +1330,12 @@ void UTFT::lcdOff()
 	cbi(P_CS, B_CS);
 	switch (display_model)
 	{
-	case PCF8833:
-		LCD_Write_COM(0x28);
-		break;
+		case PCF8833:
+			LCD_Write_COM(0x28);
+			break;
+		case SSD1963_800:
+			LCD_Write_COM(0x28);
+			break;
 	}
 	sbi(P_CS, B_CS);
 }
@@ -1342,9 +1345,12 @@ void UTFT::lcdOn()
 	cbi(P_CS, B_CS);
 	switch (display_model)
 	{
-	case PCF8833:
-		LCD_Write_COM(0x29);
-		break;
+		case PCF8833:
+			LCD_Write_COM(0x29);
+			break;
+		case SSD1963_800:
+			LCD_Write_COM(0x29);
+			break;
 	}
 	sbi(P_CS, B_CS);
 }
