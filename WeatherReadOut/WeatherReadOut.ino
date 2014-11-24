@@ -21,13 +21,14 @@ int blackPin = 12;
 
 //---------------------------------------------------------------
 // rainMeter - Chance of rain
-int percentage = 0;
 class RainMeter{
   public:
   // Current Chance
   int chance;
-  // Current State
+  // Current stepping state
   int state;
+  // Position in degrees
+  int pos;
   // Pins
   int yellow, orange,brown,black;
   
@@ -46,35 +47,83 @@ class RainMeter{
   }
   
   void ResetToZero(){
-    
+    for(int i = 0; i < 24; i++) {StepCw();}
+    chance = 0;
   }
-  
   void SetState(int nextState){
     switch(nextState)
     {
-       case 0:
-         
-       break; 
        case 1:
-         
+       case 5:
+         digitalWrite(yellow,HIGH);
+         digitalWrite(orange,LOW);
+         digitalWrite(brown,HIGH);
+         digitalWrite(black,LOW);
+         state = 1;
        break; 
        case 2:
-         
+         digitalWrite(yellow,HIGH);
+         digitalWrite(orange,LOW);
+         digitalWrite(brown,LOW);
+         digitalWrite(black,HIGH);
+         state = 2;
        break; 
        case 3:
-         
+         digitalWrite(yellow,LOW);
+         digitalWrite(orange,HIGH);
+         digitalWrite(brown,LOW);
+         digitalWrite(black,HIGH);
+         state = 3;
        break; 
-       case 5:
-         
+       case 0:
+       case 4:
+         digitalWrite(yellow,LOW);
+         digitalWrite(orange,HIGH);
+         digitalWrite(brown,HIGH);
+         digitalWrite(black,LOW);
+         state = 4;
        break;
        default:
          
        break; 
     }
   }
+  // Makes Clockwise step
+  void StepCw()  {SetState(state - 1);delay(5);}
+  // Makes Counter-clockwise step
+  void StepCcw() {SetState(state + 1);delay(5);}
+  
+  // Sets current chance of percipitation
   void SetChance(int pop){
-    
-  }
+    // Don't do anything if pop is invalid.
+    if( pop < 101 && pop > -1)
+    {
+      // Get difference between desired and current
+      int diff = pop - chance;
+      // Rotate clockwise
+      if(diff < 0) 
+      {
+        while(diff < -4)
+        {
+           StepCw();
+           chance -= 4;
+           diff = pop - chance;
+        }
+      }
+      // Rotate counter-clockwise
+      if(diff > 0)
+      {
+         while( diff > 0)
+         {
+           StepCcw();
+           chance += 4;
+           diff = pop - chance;
+         }
+      } // END : Rotate ccw
+    } // END : if pop is valid
+  } // END : SetChance()
+  
+  
 };
 
 RainMeter * Meter;
@@ -157,7 +206,7 @@ long updateTime = 0;
 int lcdState = HIGH;
 
 // Rain Meter
-const unsigned long rainMeterDelay = 5000;
+const unsigned long rainMeterDelay = 1000;
 unsigned long rainMeterTime = rainMeterDelay;
 
 // LCD
@@ -203,7 +252,7 @@ char inbuffer[INBUFFERMAX];
 long inbufferI = 0;
 // full packet buffer
 String packet;
-
+String lastRequest;
 void SendAck(String data)
 {
   // Sends formated message of acknowledge
@@ -218,6 +267,7 @@ void SendAck(String data)
 void SendRequest(String data)
 {
   // Sends formated request
+  lastRequest = data;
   unsigned len = data.length();
   Serial1.print("\x0f\x01\x05");
   Serial1.print(char(len>>8));
@@ -241,7 +291,8 @@ String ParseValue(int &i,String s)
 }
 
 void processWeatherUpdate(int & index,String Data){
-  Serial.println(Data+index);
+  Serial.println("Getting data starting at: "+String(index));
+  Serial.println(Data.substring(index));
   // Update Weather Forecast
   byte cityNumber = byte(ParseValue(index,Data).toInt())-1;
   String cityName = ParseValue(index,Data)+' ';
@@ -255,6 +306,14 @@ void processWeatherUpdate(int & index,String Data){
 void packetProcessor(byte id, byte packetStatus, unsigned packetLength, String Data)
 {
   // Process completed packet
+  Serial.println("Packet Length: "+String(packetLength)+" Actual: "+Data.length());
+  if( packetLength !=  Data.length())
+  {
+     // Drop packet, Resend if data was a request
+     if(packetStatus == 6)
+       SendRequest(lastRequest);
+     return;
+  }
   int index = 0;
   if (id == SMRTControlID)
     {
@@ -291,10 +350,13 @@ void packetBuilder()
   if (Serial1.available())
   {
     int i = 0;
+    Serial.print("Recieving: ");
      while(Serial1.available())
      {
         incoming[i++]= char(Serial1.read());
+        Serial.print(incoming[i-1]);
      }
+     Serial.println(" Done");
      //Serial1.println("Incoming: "+String(incoming));
      incoming[i++] = NULL;
      if(packetState == WaitingforStart)
@@ -350,8 +412,13 @@ void packetBuilder()
          *endD = 0;
          pendD = endD;
          byte devID = *(beginD+1);
+         Serial.println("Dev ID: "+String(devID));
          byte devStatus = *(beginD+2);
-         unsigned pLength = *(beginD+3)<<8 + *(beginD+4);
+         Serial.println("Status: "+String(devID));
+         unsigned pLength = ((unsigned)(*(beginD+4)));
+         pLength += ((unsigned)*(beginD+3))<<8;
+         Serial.println("Length: "+String(pLength));
+         Serial.println("Length: "+String(unsigned(*(beginD+3)))+" "+String(unsigned(*(beginD+4))));
          packet = String(beginD+5);
          //Serial.println("Processing: Start");
          packetProcessor(devID,devStatus,pLength,packet);
@@ -373,7 +440,6 @@ void packetBuilder()
          inbufferI = 0;
        }
      }
-  //Serial.println("Made it");
   }
 }
 
@@ -409,9 +475,6 @@ int digitCounter(String temp) {
 //---------------------------------------------------------------
 // the setup routine runs once when you press reset:
 void setup() {
-  delay(1000);
-  // Setup the LCD
-  delay(1000);
   myGLCD.InitLCD(PORTRAIT);
   myTouch.InitTouch(LANDSCAPE);
   myTouch.setPrecision(PREC_MEDIUM);
@@ -424,18 +487,21 @@ void setup() {
   // Comms
   Serial.begin(9600);
   Serial1.begin(9600);
-  pinMode(sensorPin, INPUT_PULLUP);
-  // Initalize & zero rainMeter
   
+  // Initalize & zero rainMeter
+  Meter = new RainMeter(yellowPin,orangePin,brownPin,blackPin);
   // Set up PIR sensor output pin
   pinMode(sensorPin, INPUT_PULLUP);
   //attachInterrupt(sensorPin, lcdToggle, CHANGE);
   
   // Request Weather
   Serial.println("Init: Done");
+  // Setup the LCD
+  delay(1000);
   SendRequest("f");
 }
 
+int percent = 0;
 // the loop routine runs over and over again forever:
 void loop() {
   // Current time for task timing.
@@ -446,7 +512,13 @@ void loop() {
   /*
   if(curTime > rainMeterTime)
   {
-   rainMeterTime += rainMeterDelay;
+   rainMeterTime = curTime + rainMeterDelay;
+   percent++;
+   if(percent%2)
+      Meter->SetChance(95);
+   else
+      Meter->SetChance(0);
+   Serial.println(String(Meter->chance));
    SendRequest("f"); 
   }
   */
@@ -482,7 +554,9 @@ void loop() {
   //Print High Temperature
   myGLCD.print("High Temp:", 0, 300);
   myGLCD.setFont(SevenSegNumFont);
-    
+  
+  // Set Percentage  
+  Meter->SetChance(Cities[city].rainChance);
   //if displaying triple digit number
   if(digitCounter(displayTemp(temp_i, Cities[city].highTemp)) == 3) {
     //Negative Temp, print '-' sign
