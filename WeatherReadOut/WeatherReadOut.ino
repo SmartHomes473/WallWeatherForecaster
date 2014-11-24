@@ -4,7 +4,7 @@
 // PIR MOTION SENSOR
 // TRIGGER -> NC
 // OUTPUT -> 8
-int sensorPin = 8;
+int sensorPin = 54;
 
 // STEPPER MOTOR
 // YELLOW -> 9
@@ -18,6 +18,8 @@ int blackPin = 12;
 
 //---------------------------------------------------------------
 
+// Motion Sensor
+int lcdState = HIGH;
 
 //---------------------------------------------------------------
 // rainMeter - Chance of rain
@@ -76,23 +78,6 @@ class CityWeather{
 };
 
 CityWeather Cities[5];
-
-//-----------------------------------------------
-// ISR
-/*
-// ISR for LCD toggle
-void lcdToggle(){
-   // Toggle the LCD flag
-  lcdState = !lcdState;
-  // Turn it off or on
-  if (lcdState){
-    LCD.lcdOn();
-  }
-  else {
-    LCD.lcdOff();
-  }
-}
-*/
   
    
 //---------------------------------------------------------------
@@ -102,9 +87,6 @@ long curTime = 0;
 // Weather Update
 const unsigned long updateDelay = 5000; 
 long updateTime = 0;
-
-// Motion Sensor
-int lcdState = HIGH;
 
 // Rain Meter
 const unsigned long rainMeterDelay = 5000;
@@ -135,6 +117,25 @@ UTouch myTouch(6,5,4,3,2);
 class CitySelector{
   
 };
+
+//-----------------------------------------------
+// ISR
+
+// ISRs for LCD toggle
+// Separated into two functions for testing purposes, as hitting the reset button
+// on our prototype usually leads to the motion sensor being driven high from virbration, causing
+// lcdState to be opposite of its intended value
+/*void lcdUp(){
+  lcdState = HIGH;
+  myGLCD.lcdOn();
+  digitalWrite(13, HIGH);
+}
+
+void lcdDown() {
+  lcdState = LOW;
+  myGLCD.lcdOff();
+  digitalWrite(13, LOW);
+}*/
 
 //---------------------------------------------------------------
 // Comms
@@ -379,7 +380,9 @@ void setup() {
   
   // Set up PIR sensor output pin
   pinMode(sensorPin, INPUT_PULLUP);
-  //attachInterrupt(sensorPin, lcdToggle, CHANGE);
+  pinMode(13, OUTPUT);
+  //attachInterrupt(sensorPin, lcdUp, RISING);
+  //attachInterrupt(sensorPin, lcdDown, FALLING);
   
   // Request Weather
   Serial.println("Init: Done");
@@ -388,6 +391,15 @@ void setup() {
 
 // the loop routine runs over and over again forever:
 void loop() {
+  if (analogRead(sensorPin) > 512) {
+    myGLCD.lcdOn();
+    digitalWrite(13, HIGH);
+  }
+  else {
+    myGLCD.lcdOff();
+    digitalWrite(13, LOW);
+  }
+  
   // Current time for task timing.
   curTime = millis();
   // Check for incomming messages
