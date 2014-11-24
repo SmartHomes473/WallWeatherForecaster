@@ -17,7 +17,6 @@ int brownPin = 11;
 int blackPin = 12;
 
 //---------------------------------------------------------------
-
 // Motion Sensor
 int lcdState = HIGH;
 
@@ -131,7 +130,7 @@ class RainMeter{
 RainMeter * Meter;
 
 //---------------------------------------------------------------
-// LCD - Displays temp, humidity etc.
+// City Weather data structure.
 char blah = 'a';
 
 class CityWeather{    
@@ -238,10 +237,14 @@ void lcdDown() {
 
 //---------------------------------------------------------------
 // Comms
+#include <DueFlashStorage.h>
+DueFlashStorage FlashStorage;
+#define devIDLocation 0
+byte _devID = FlashStorage.read(devIDLocation) + 2; // TODO Change. Add auto connect
+
 #define WaitingforStart 0
 #define WaitingforEnd 1
 #define PacketComplete 2
-byte SMRTControlID = 1;
 // Status of string being processed;
 byte packetState = WaitingforStart;
 // Incomming char buffer
@@ -305,7 +308,7 @@ void processWeatherUpdate(int & index,String Data){
 }
 
 void packetProcessor(byte id, byte packetStatus, unsigned packetLength, String Data)
-{
+{ 
   // Process completed packet
   Serial.println("Packet Length: "+String(packetLength)+" Actual: "+Data.length());
   if( packetLength !=  Data.length())
@@ -316,7 +319,8 @@ void packetProcessor(byte id, byte packetStatus, unsigned packetLength, String D
      return;
   }
   int index = 0;
-  if (id == SMRTControlID)
+  Serial.println(_devID);
+  if (id == _devID)
     {
       // Is this packet for me?
       char cmd;
@@ -488,8 +492,6 @@ void setup() {
   // Comms
   Serial.begin(9600);
   Serial1.begin(9600);
-  
-  // Initalize & zero rainMeter
   Meter = new RainMeter(yellowPin,orangePin,brownPin,blackPin);
   // Set up PIR sensor output pin
   pinMode(sensorPin, INPUT_PULLUP);
