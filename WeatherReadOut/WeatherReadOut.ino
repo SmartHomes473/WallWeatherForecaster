@@ -191,8 +191,9 @@ void packetBuilder()
     Serial.print("Recieving: ");
      while(Serial1.available())
      {
-        incoming[i++]= char(Serial1.read());
-        Serial.print(incoming[i-1]);
+        // Copy next character from serial buffer, print to serial monitor
+        incoming[i]= char(Serial1.read());
+        Serial.print(incoming[i++]);
      }
      Serial.println(" Done");
      //Serial1.println("Incoming: "+String(incoming));
