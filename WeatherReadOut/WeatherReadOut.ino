@@ -313,10 +313,13 @@ int digitCounter(String temp) {
 //---------------------------------------------------------------
 // the setup routine runs once when you press reset:
 void setup() {
+  // LCD
   myGLCD.InitLCD(PORTRAIT);
   myTouch.InitTouch(LANDSCAPE);
   myTouch.setPrecision(PREC_MEDIUM);
   myGLCD.clrScr();
+  
+  // City stuff
   city = 0;
   new_city = 0;
   settings = 0;
@@ -349,6 +352,7 @@ void setup() {
 int percent = 0;
 // the loop routine runs over and over again forever:
 void loop() {
+  // Logic for if screen is on
   if (analogRead(sensorPin) > 512) {
     myGLCD.lcdOn();
     digitalWrite(13, HIGH);
@@ -360,22 +364,10 @@ void loop() {
   
   // Current time for task timing.
   curTime = millis();
+  
   // Check for incomming messages
   packetBuilder();
-  // Motion Sensor
-  /*
-  if(curTime > rainMeterTime)
-  {
-   rainMeterTime = curTime + rainMeterDelay;
-   percent++;
-   if(percent%2)
-      Meter->SetChance(95);
-   else
-      Meter->SetChance(0);
-   Serial.println(String(Meter->chance));
-   SendRequest("f"); 
-  }
-  */
+
   // Update LCD Task - Performs scrolling of data.
 
   //Clear screen logic
