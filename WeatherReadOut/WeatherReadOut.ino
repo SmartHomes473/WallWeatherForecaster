@@ -11,169 +11,21 @@ int sensorPin = 54;
 // ORANGE -> 10
 // BROWN -> 11
 // BLACK -> 12
-int yellowPin = 9;
-int orangePin = 10;
-int brownPin = 11;
-int blackPin = 12;
+int motorPins[4] = {9, 10, 11, 12};
 
 //---------------------------------------------------------------
 // Motion Sensor
 int lcdState = HIGH;
 
 //---------------------------------------------------------------
-// rainMeter - Chance of rain
-class RainMeter{
-  public:
-  // Current Chance
-  int chance;
-  // Current stepping state
-  int state;
-  // Position in degrees
-  int pos;
-  // Pins
-  int yellow, orange,brown,black;
-  
-  RainMeter(int yel, int org, int brn, int blk){
-    state = 0;
-    yellow = yel;
-    orange = org;
-    brown  = brn;
-    black  = blk;
-    pinMode(yellow, OUTPUT);
-    pinMode(orange, OUTPUT);
-    pinMode(brown, OUTPUT);
-    pinMode(black, OUTPUT);
-    SetState(state);
-    ResetToZero();
-  }
-  
-  void ResetToZero(){
-    for(int i = 0; i < 24; i++) {StepCw();}
-    chance = 0;
-  }
-  void SetState(int nextState){
-    switch(nextState)
-    {
-       case 1:
-       case 5:
-         digitalWrite(yellow,HIGH);
-         digitalWrite(orange,LOW);
-         digitalWrite(brown,HIGH);
-         digitalWrite(black,LOW);
-         state = 1;
-       break; 
-       case 2:
-         digitalWrite(yellow,HIGH);
-         digitalWrite(orange,LOW);
-         digitalWrite(brown,LOW);
-         digitalWrite(black,HIGH);
-         state = 2;
-       break; 
-       case 3:
-         digitalWrite(yellow,LOW);
-         digitalWrite(orange,HIGH);
-         digitalWrite(brown,LOW);
-         digitalWrite(black,HIGH);
-         state = 3;
-       break; 
-       case 0:
-       case 4:
-         digitalWrite(yellow,LOW);
-         digitalWrite(orange,HIGH);
-         digitalWrite(brown,HIGH);
-         digitalWrite(black,LOW);
-         state = 4;
-       break;
-       default:
-         
-       break; 
-    }
-  }
-  // Makes Clockwise step
-  void StepCw()  {SetState(state - 1);delay(5);}
-  // Makes Counter-clockwise step
-  void StepCcw() {SetState(state + 1);delay(5);}
-  
-  // Sets current chance of percipitation
-  void SetChance(int pop){
-    // Don't do anything if pop is invalid.
-    if( pop < 101 && pop > -1)
-    {
-      // Get difference between desired and current
-      int diff = pop - chance;
-      // Rotate clockwise
-      if(diff < 0) 
-      {
-        while(diff < -4)
-        {
-           StepCw();
-           chance -= 4;
-           diff = pop - chance;
-        }
-      }
-      // Rotate counter-clockwise
-      if(diff > 0)
-      {
-         while( diff > 0)
-         {
-           StepCcw();
-           chance += 4;
-           diff = pop - chance;
-         }
-      } // END : Rotate ccw
-    } // END : if pop is valid
-  } // END : SetChance()
-  
-  
-};
+// RainMeter - Chance of rain
+#include <RainMeter.h>
 
-RainMeter * Meter;
+RainMeter *meter;
 
 //---------------------------------------------------------------
-// City Weather data structure.
-char blah = 'a';
-
-class CityWeather{    
-  public:
-    // Precent of Percipitation
-    int rainChance;
-    // City Name
-    String cityName;
-    // High forecasted temperature
-    String highTemp;
-    // Low forecasted temperature
-    String lowTemp;
-    // Humidity percentage
-    String humidityPercent;
-    // Condition
-    String condition;
-    
-
-   CityWeather() {
-     // Default constructor
-     cityName = "Bum Fuk, Egypt"+String(blah);
-     rainChance = 50; 
-     blah++;
-     highTemp = "100";
-     lowTemp = "-32";
-     humidityPercent = "56";
-     condition = "Cold as Shit";
-   }
-   
-   CityWeather(String name, int hi, int low, unsigned humidity, unsigned rain)
-   {
-       UpdateWeather(name,hi,low,humidity,rain);
-   }
-   
-   void UpdateWeather(String name, int hi, int low, unsigned humidity, unsigned rain)
-   {
-       cityName = name;
-       highTemp = String(hi);
-       lowTemp = String(low);
-       humidityPercent = String(humidity);
-       rainChance = rain%101;
-   }
-};
+// CityWeather - City weather information data structure
+#include <CityWeather.h>
 
 CityWeather Cities[5];
   
@@ -217,25 +69,6 @@ class CitySelector{
 };
 
 //-----------------------------------------------
-// ISR
-
-// ISRs for LCD toggle
-// Separated into two functions for testing purposes, as hitting the reset button
-// on our prototype usually leads to the motion sensor being driven high from virbration, causing
-// lcdState to be opposite of its intended value
-/*void lcdUp(){
-  lcdState = HIGH;
-  myGLCD.lcdOn();
-  digitalWrite(13, HIGH);
-}
-
-void lcdDown() {
-  lcdState = LOW;
-  myGLCD.lcdOff();
-  digitalWrite(13, LOW);
-}*/
-
-//---------------------------------------------------------------
 // Comms
 #include <DueFlashStorage.h>
 DueFlashStorage FlashStorage;
@@ -489,18 +322,25 @@ void setup() {
   settings = 0;
   update_i = 0; //index to update array
   temp_i = 0; //index to temp array
+  
   // Comms
   Serial.begin(9600);
   Serial1.begin(9600);
-  Meter = new RainMeter(yellowPin,orangePin,brownPin,blackPin);
-  // Set up PIR sensor output pin
+  
+  //Set up the rain meter
+  pinMode(motorPins[0], OUTPUT);
+  pinMode(motorPins[1], OUTPUT);
+  pinMode(motorPins[2], OUTPUT);
+  pinMode(motorPins[3], OUTPUT);
+  meter = new RainMeter(7.5, 180.0, motorPins);
+  
+  // Set up PIR sensor output pin (and LED for status)
   pinMode(sensorPin, INPUT_PULLUP);
   pinMode(13, OUTPUT);
-  //attachInterrupt(sensorPin, lcdUp, RISING);
-  //attachInterrupt(sensorPin, lcdDown, FALLING);
   
   // Request Weather
   Serial.println("Init: Done");
+  
   // Setup the LCD
   delay(1000);
   SendRequest("f");
@@ -570,7 +410,7 @@ void loop() {
   myGLCD.setFont(SevenSegNumFont);
   
   // Set Percentage  
-  Meter->SetChance(Cities[city].rainChance);
+  meter->setChance(Cities[city].rainChance);
   //if displaying triple digit number
   if(digitCounter(displayTemp(temp_i, Cities[city].highTemp)) == 3) {
     //Negative Temp, print '-' sign
