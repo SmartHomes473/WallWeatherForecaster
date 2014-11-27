@@ -69,218 +69,20 @@ class CitySelector{
 };
 
 //-----------------------------------------------
-// Comms
+// Non-Volatile Storage
+
 #include <DueFlashStorage.h>
 DueFlashStorage FlashStorage;
 #define devIDLocation 0
-byte _devID = FlashStorage.read(devIDLocation) + 2; // TODO Change. Add auto connect
+byte _devID = FlashStorage.read(devIDLocation); // TODO Change. Add auto connect
 
-#define WaitingforStart 0
-#define WaitingforEnd 1
-#define PacketComplete 2
-// Status of string being processed;
-byte packetState = WaitingforStart;
-// Incomming char buffer
-#define INCOMINGMAX 2024
-char incoming[2024];
-// partail packet buffer
-#define INBUFFERMAX 8192
-char inbuffer[INBUFFERMAX];
-long inbufferI = 0;
-// full packet buffer
-String packet;
-String lastRequest;
-void SendAck(String data)
-{
-  // Sends formated message of acknowledge
-  unsigned len = data.length();
-  Serial1.print("\x0f\x01\x03");
-  Serial1.print(char(len>>8));
-  Serial1.print(char(len&0xff));
-  Serial1.print(data);
-  Serial1.println("\x04");
-}
+//-----------------------------------------------
+// Comms
 
-void SendRequest(String data)
-{
-  // Sends formated request
-  lastRequest = data;
-  unsigned len = data.length();
-  Serial1.print("\x0f\x01\x05");
-  Serial1.print(char(len>>8));
-  Serial1.print(char(len&0xff));
-  Serial1.print(data);
-  Serial1.println("\x04");
-}
+#include <WeatherComms.h>
 
-String ParseValue(int &i,String s)
-{
- // Extracts value from string
- while(s != NULL && s[i] != ';') {
-   i++;
- }
- int start = ++i;
- while(s != NULL && (s[i] != ';' && s[i] != '#')) 
- {
-   i++;
- }
- return s.substring(start,i);
-}
-
-void processWeatherUpdate(int & index,String Data){
-  Serial.println("Getting data starting at: "+String(index));
-  Serial.println(Data.substring(index));
-  // Update Weather Forecast
-  byte cityNumber = byte(ParseValue(index,Data).toInt())-1;
-  String cityName = ParseValue(index,Data)+' ';
-  int cityHigh = ParseValue(index,Data).toInt();
-  int cityLow = ParseValue(index,Data).toInt();
-  unsigned cityHumid = unsigned(ParseValue(index,Data).toInt());
-  unsigned cityPOP = unsigned(ParseValue(index,Data).toInt());
-  Cities[cityNumber].UpdateWeather(cityName,cityHigh,cityLow,cityHumid,cityPOP);
-}
-
-void packetProcessor(byte id, byte packetStatus, unsigned packetLength, String Data)
-{ 
-  // Process completed packet
-  Serial.println("Packet Length: "+String(packetLength)+" Actual: "+Data.length());
-  if( packetLength !=  Data.length())
-  {
-     // Drop packet, Resend if data was a request
-     if(packetStatus == 6)
-       SendRequest(lastRequest);
-     return;
-  }
-  int index = 0;
-  Serial.println(_devID);
-  if (id == _devID)
-    {
-      // Is this packet for me?
-      char cmd;
-      if(packetStatus == 2)
-	{
-	  while(Data[index] != 0)
-	    {
-	      cmd = Data[index++];
-	      if( cmd == 'w')
-		{
-		  processWeatherUpdate(index,Data);
-		}
-	    }
-	  SendAck("s");
-	}
-      if(packetStatus == 6)
-	{
-	  while(Data[index] != 0)
-	    {
-	      cmd = Data[index++];
-	      if( cmd == 'w')
-		{
-		  processWeatherUpdate(index,Data);
-		}
-	    }
-	}
-    }
-}
-
-void packetBuilder()
-{ // builds packet from xbee input
-  if (Serial1.available())
-  {
-    int i = 0;
-    Serial.print("Recieving: ");
-     while(Serial1.available())
-     {
-        // Copy next character from serial buffer, print to serial monitor
-        incoming[i]= char(Serial1.read());
-        Serial.print(incoming[i++]);
-     }
-     Serial.println(" Done");
-     //Serial1.println("Incoming: "+String(incoming));
-     incoming[i++] = NULL;
-     if(packetState == WaitingforStart)
-     {
-       char * location =strchr(incoming,0x0f);
-       if(location != NULL)
-       {
-         char * endL = strchr(location,0x04);
-         
-         while( endL != NULL && ((endL - location) < 4))
-         {
-             endL = strchr(endL+1,0x04);
-         }
-         
-         int j = i-long(location-incoming);
-         //Serial1.println("found: "+String(i-inbufferI));
-         memcpy(inbuffer,location,j);
-         inbufferI += j-1;
-         if(endL)
-           packetState = PacketComplete;
-         else
-           packetState = WaitingforEnd;
-       }
-     }
-     else if(packetState == WaitingforEnd)
-     {
-       char * endL = strchr(incoming,0x04);
-       if(i+inbufferI < INBUFFERMAX)
-       {
-         memcpy(inbuffer+inbufferI,incoming,i);
-         inbufferI += i-1;
-         if(endL)         
-         {
-             packetState = PacketComplete;
-             inbufferI++;
-         }
-       }
-       else
-       {
-         packetState = WaitingforStart;
-       }
-     }
-     if(packetState == PacketComplete)
-     {
-       //Serial1.println("Processing: ");
-       packetState = WaitingforStart;
-       char* beginD = strchr(inbuffer,0x0f);
-       char* endD = strchr(beginD+5,0x04);
-       //Serial1.println(String(long(endD)));
-       char* pendD = endD;
-       while(beginD != 0 && endD!= 0)
-       {
-         *endD = 0;
-         pendD = endD;
-         byte devID = *(beginD+1);
-         Serial.println("Dev ID: "+String(devID));
-         byte devStatus = *(beginD+2);
-         Serial.println("Status: "+String(devID));
-         unsigned pLength = ((unsigned)(*(beginD+4)));
-         pLength += ((unsigned)*(beginD+3))<<8;
-         Serial.println("Length: "+String(pLength));
-         Serial.println("Length: "+String(unsigned(*(beginD+3)))+" "+String(unsigned(*(beginD+4))));
-         packet = String(beginD+5);
-         //Serial.println("Processing: Start");
-         packetProcessor(devID,devStatus,pLength,packet);
-         //Serial.println("Processing: done");
-         
-         beginD = strchr(endD+1,0x0f);
-         if(beginD)
-           endD = strchr(beginD,0x04);
-       }
-       if(beginD)
-       {
-         packetState = WaitingforEnd;
-         int j = inbufferI - (beginD-inbuffer);
-         memcpy(inbuffer,beginD,j);
-         inbufferI = j;
-       }
-       else
-       {
-         inbufferI = 0;
-       }
-     }
-  }
-}
+//-----------------------------------------------
+// Helper Functions
 
 //This functions takes in a string temperature and converts it to F, C, or K
 String displayTemp(int temp_index, String temperature) {
@@ -330,6 +132,8 @@ void setup() {
   // Comms
   Serial.begin(9600);
   Serial1.begin(9600);
+  delay(500);
+  registerDevice(_devID);
   
   //Set up the rain meter
   pinMode(motorPins[0], OUTPUT);
