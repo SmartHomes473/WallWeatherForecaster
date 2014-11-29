@@ -22,7 +22,6 @@ void RainMeter::setChance(int newChance) {
 	
 	double diff = newChance - ((currentStep * stepSize)/degreesPerPercent);
 	int steps = abs((int)(diff * 0.01 * totalSteps));
-	Serial.println(steps);
 	if (diff < 0) {
 		clockwise = true;
 	}
