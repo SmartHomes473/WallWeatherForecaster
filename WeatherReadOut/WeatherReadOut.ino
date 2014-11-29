@@ -1,5 +1,4 @@
-#include "RainMeter.h"
-
+#include <RainMeter.h>
 //---------------------------------------------------------------
 // Pin parameters - All pins owned by devices.
 
@@ -26,7 +25,7 @@ RainMeter *meter;
 
 //---------------------------------------------------------------
 // CityWeather - City weather information data structure
-#include "CityWeather.h"
+#include <CityWeather.h>
 
 CityWeather Cities[5];
   
@@ -75,7 +74,7 @@ class CitySelector{
 //-----------------------------------------------
 // Comms
 
-#include "WeatherComms.h"
+#include <WeatherComms.h>
 WeatherComms comms;
 //-----------------------------------------------
 // Helper Functions
