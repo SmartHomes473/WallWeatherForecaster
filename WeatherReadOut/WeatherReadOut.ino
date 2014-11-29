@@ -1,3 +1,5 @@
+#include "RainMeter.h"
+
 //---------------------------------------------------------------
 // Pin parameters - All pins owned by devices.
 
@@ -19,13 +21,12 @@ int lcdState = HIGH;
 
 //---------------------------------------------------------------
 // RainMeter - Chance of rain
-#include <RainMeter.h>
 
 RainMeter *meter;
 
 //---------------------------------------------------------------
 // CityWeather - City weather information data structure
-#include <CityWeather.h>
+#include "CityWeather.h"
 
 CityWeather Cities[5];
   
@@ -71,16 +72,11 @@ class CitySelector{
 //-----------------------------------------------
 // Non-Volatile Storage
 
-#include <DueFlashStorage.h>
-DueFlashStorage FlashStorage;
-#define devIDLocation 0
-byte _devID = FlashStorage.read(devIDLocation); // TODO Change. Add auto connect
-
 //-----------------------------------------------
 // Comms
 
-#include <WeatherComms.h>
-
+#include "WeatherComms.h"
+WeatherComms comms;
 //-----------------------------------------------
 // Helper Functions
 
@@ -133,7 +129,7 @@ void setup() {
   Serial.begin(9600);
   Serial1.begin(9600);
   delay(500);
-  registerDevice(_devID);
+  comms.registerDevice();
   
   //Set up the rain meter
   pinMode(motorPins[0], OUTPUT);
@@ -151,7 +147,7 @@ void setup() {
   
   // Setup the LCD
   delay(1000);
-  SendRequest("f");
+  comms.SendRequest("f");
 }
 
 int percent = 0;
@@ -171,7 +167,7 @@ void loop() {
   curTime = millis();
   
   // Check for incomming messages
-  packetBuilder();
+  comms.packetBuilder();
 
   // Update LCD Task - Performs scrolling of data.
 
@@ -364,7 +360,7 @@ void loop() {
       myGLCD.setColor(0, 0, 255); //draw in blue
       myGLCD.drawRect(375, 600, 429, 675);
       myGLCD.print("5", 386, 610); 
-     myGLCD.setColor(255, 0, 0); //draw in red 
+      myGLCD.setColor(255, 0, 0); //draw in red 
     }
     
     myGLCD.setFont(BigFont);

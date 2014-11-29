@@ -1,10 +1,9 @@
 #include "WeatherComms.h"
-
-void registerDevice(byte _devID) {
-  
-   Serial.println("ID: " + String(_devID));
+void WeatherComms::registerDevice() {
+   devID = FlashStorage.read(0);
+   Serial.println("ID: " + String(devID));
    // If all bits are 1 the flash hasn't been written and therefore the device hasn't been registered
-   if (_devID == 255)
+   if (devID == 255)
    {
 	/* Register device */
         // Prepare registration according to comm definition
@@ -24,7 +23,7 @@ void registerDevice(byte _devID) {
   } 
 }
 
-void SendAck(String data)
+void WeatherComms::SendAck(String data)
 {
   // Sends formated message of acknowledge
   unsigned len = data.length();
@@ -35,7 +34,7 @@ void SendAck(String data)
   Serial1.println("\x04");
 }
 
-void SendRequest(String data)
+void WeatherComms::SendRequest(String data)
 {
   // Sends formated request
   lastRequest = data;
@@ -47,7 +46,7 @@ void SendRequest(String data)
   Serial1.println("\x04");
 }
 
-String ParseValue(int &i,String s)
+String WeatherComms::ParseValue(int &i,String s)
 {
  // Extracts value from string
  while(s != NULL && s[i] != ';') {
@@ -61,7 +60,7 @@ String ParseValue(int &i,String s)
  return s.substring(start,i);
 }
 
-void processWeatherUpdate(int & index,String Data){
+void WeatherComms::processWeatherUpdate(int & index,String Data){
   Serial.println("Getting data starting at: "+String(index));
   Serial.println(Data.substring(index));
   // Update Weather Forecast
@@ -74,7 +73,7 @@ void processWeatherUpdate(int & index,String Data){
   Cities[cityNumber].UpdateWeather(cityName,cityHigh,cityLow,cityHumid,cityPOP);
 }
 
-void packetProcessor(byte id, byte packetStatus, unsigned packetLength, String Data)
+void WeatherComms::packetProcessor(byte id, byte packetStatus, unsigned packetLength, String Data)
 { 
   // Process completed packet
   Serial.println("Packet Length: "+String(packetLength)+" Actual: "+Data.length());
@@ -86,15 +85,15 @@ void packetProcessor(byte id, byte packetStatus, unsigned packetLength, String D
      return;
   }
   int index = 0;
-  Serial.println(_devID);
+  Serial.println(devID);
   
   // Overwrite the current devID with the new registered ID if the special registration
   // reply packet arrives
-  if (packetStatus == 0 && _devID == 0) {
+  if (packetStatus == 0 && devID == 0) {
     FlashStorage.write(devIDLocation, id);
   }
   
-  if (id == _devID)
+  if (id == devID)
     {
       // Is this packet for me?
       char cmd;
@@ -124,7 +123,7 @@ void packetProcessor(byte id, byte packetStatus, unsigned packetLength, String D
     }
 }
 
-void packetBuilder()
+void WeatherComms::packetBuilder()
 { // builds packet from xbee input
   if (Serial1.available())
   {
