@@ -1,6 +1,7 @@
 #include <WeatherComms.h>
+extern int city;
 void WeatherComms::registerDevice() {
-   devID = FlashStorage.read(0);
+   devID = FlashStorage.read(0)+4;
    Serial.println("ID: " + String(devID));
    // If all bits are 1 the flash hasn't been written and therefore the device hasn't been registered
    if (devID == 255)
@@ -27,7 +28,7 @@ void WeatherComms::SendAck(String data)
 {
   // Sends formated message of acknowledge
   unsigned len = data.length();
-  Serial1.print("\x0f\x01\x03");
+  Serial1.print("\x0f"+String(char(devID))+"\x03");
   Serial1.print(char(len>>8));
   Serial1.print(char(len&0xff));
   Serial1.print(data);
@@ -39,7 +40,7 @@ void WeatherComms::SendRequest(String data)
   // Sends formated request
   lastRequest = data;
   unsigned len = data.length();
-  Serial1.print("\x0f\x01\x05");
+  Serial1.print("\x0f"+String(char(devID))+"\x05");
   Serial1.print(char(len>>8));
   Serial1.print(char(len&0xff));
   Serial1.print(data);
@@ -201,6 +202,7 @@ void WeatherComms::packetBuilder()
          packet = String(beginD+5);
          //Serial.println("Processing: Start");
          packetProcessor(devID,devStatus,pLength,packet);
+	 city = -1;
          //Serial.println("Processing: done");
          
          beginD = strchr(endD+1,0x0f);

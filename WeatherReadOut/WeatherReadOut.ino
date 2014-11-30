@@ -63,11 +63,6 @@ String temp[3] = {"F","C","K"};
 UTFT myGLCD(ITDB50,25,26,27,28);
 UTouch myTouch(6,5,4,3,2);
 
-// Button Selector Class
-class CitySelector{
-  
-};
-
 //-----------------------------------------------
 // Non-Volatile Storage
 
@@ -118,7 +113,7 @@ void setup() {
   myGLCD.clrScr();
   
   // City stuff
-  city = 0;
+  city = -1;
   new_city = 0;
   settings = 0;
   update_i = 0; //index to update array
@@ -171,10 +166,9 @@ void loop() {
   // Update LCD Task - Performs scrolling of data.
 
   //Clear screen logic
-  if(new_city != city) {
+  if(new_city != city ) {
     myGLCD.clrScr();
     city = new_city;
-  }
   
   myGLCD.setColor(255, 0, 0);
   myGLCD.setFont(BigFont);
@@ -285,7 +279,7 @@ void loop() {
     
   myGLCD.setFont(BigFont);
   myGLCD.print("%", 270, 440); 
-  
+  }
   if(settings == 0) {
     //Draw Cities/Settings Boxes
     myGLCD.print("Stored Cities", CENTER, 570);
@@ -390,8 +384,8 @@ void loop() {
       }
       else if(x >= 35 & x <= 90) {
         if(y >= 51 & y <= 429) {
-          settings = 1;  
-          myGLCD.clrScr();
+          settings = 1;
+          city =-1;
         } 
       }
     }
@@ -454,15 +448,15 @@ void loop() {
       if(x >= 100 & x <= 200) {
         if(y >= 60 & y < 180){
           temp_i = 0;
-          myGLCD.clrScr();
+          city =-1;
         }
         else if(y >= 180 & y < 300) {
           temp_i = 1; 
-          myGLCD.clrScr();
+          city =-1;
         }
         else if(y >= 300 & y <= 420) {
           temp_i = 2; 
-          myGLCD.clrScr();
+          city =-1;
         }
       }
       else if(x >= 210 & x <= 260) {
@@ -492,8 +486,8 @@ void loop() {
         }  
         //settings button pressed
         else if(y >= 240 & y <= 420) {
-          settings = 0;  
-          myGLCD.clrScr();
+          settings = 0;
+          city =-1;
         }
       }
     } 
