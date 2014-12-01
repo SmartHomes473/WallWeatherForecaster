@@ -1,5 +1,6 @@
 #include <WeatherComms.h>
 extern int city;
+extern String hour,minute, meridian;
 void WeatherComms::registerDevice() {
    devID = FlashStorage.read(0)+4;
    Serial.println("ID: " + String(devID));
@@ -61,17 +62,24 @@ String WeatherComms::ParseValue(int &i,String s)
  return s.substring(start,i);
 }
 
+void WeatherComms::processTime(int &index, String Data){
+  hour = ParseValue(index,Data);
+  minute = ParseValue(index,Data);
+  meridian = ParseValue(index,Data);
+}
+
 void WeatherComms::processWeatherUpdate(int & index,String Data){
   Serial.println("Getting data starting at: "+String(index));
   Serial.println(Data.substring(index));
   // Update Weather Forecast
   byte cityNumber = byte(ParseValue(index,Data).toInt())-1;
   String cityName = ParseValue(index,Data)+' ';
+  String condition = ParseValue(index,Data);
   int cityHigh = ParseValue(index,Data).toInt();
   int cityLow = ParseValue(index,Data).toInt();
   unsigned cityHumid = unsigned(ParseValue(index,Data).toInt());
   unsigned cityPOP = unsigned(ParseValue(index,Data).toInt());
-  Cities[cityNumber].UpdateWeather(cityName,cityHigh,cityLow,cityHumid,cityPOP);
+  Cities[cityNumber].UpdateWeather(cityName,condition,cityHigh,cityLow,cityHumid,cityPOP);
 }
 
 void WeatherComms::packetProcessor(byte id, byte packetStatus, unsigned packetLength, String Data)
@@ -118,6 +126,10 @@ void WeatherComms::packetProcessor(byte id, byte packetStatus, unsigned packetLe
 	      if( cmd == 'w')
 		{
 		  processWeatherUpdate(index,Data);
+		}
+	      if( cmd == 't')
+		{
+		  processTime(index,Data);
 		}
 	    }
 	}

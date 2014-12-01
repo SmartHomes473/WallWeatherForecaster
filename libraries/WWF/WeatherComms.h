@@ -50,6 +50,7 @@ class WeatherComms{
 
   String ParseValue(int &i, String s);
   void processWeatherUpdate(int & index, String Data);
+  void processTime(int &index, String Data);
   void packetProcessor(byte id, byte packetStatus, unsigned packetLength, String Data);
   void packetBuilder();
 };

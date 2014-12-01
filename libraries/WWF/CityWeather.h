@@ -23,7 +23,7 @@ class CityWeather{
    CityWeather();
    CityWeather(String name, int hi, int low, unsigned humidity, unsigned rain);
    
-   void UpdateWeather(String name, int hi, int low, unsigned humidity, unsigned rain);
+   void UpdateWeather(String name,String cond, int hi, int low, unsigned humidity, unsigned rain);
 };
 
 #endif

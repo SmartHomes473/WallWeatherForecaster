@@ -46,6 +46,9 @@ unsigned long rainMeterTime = rainMeterDelay;
 const unsigned long lcdDelay = 1;
 unsigned long lcdTime = lcdDelay;
 
+// Add minute
+const unsigned long clockDelay = 60000;
+unsigned long clockTime = clockDelay;
 
 //---------------------------------------------------------------
 // Touchscreen
@@ -59,6 +62,7 @@ int city, new_city;
 int x, y, settings, update_i, temp_i;
 String update[24] = {"01","02","03","04","05","06","07","08","09","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24"};
 String temp[3] = {"F","C","K"};
+String hour ="6", minute = "66", meridian="NT";
 
 UTFT myGLCD(ITDB50,25,26,27,28);
 UTouch myTouch(6,5,4,3,2);
@@ -164,7 +168,46 @@ void loop() {
   comms.packetBuilder();
 
   // Update LCD Task - Performs scrolling of data.
-
+  if(clockTime < curTime)
+  {
+    clockTime += clockDelay;
+    city = -1;
+    int hourRollover = 0;
+    // Increase minute
+    if(minute[1] == '9')
+    {
+      if(minute[0] == '5')
+        {
+          minute[0] = '0';
+          hourRollover = 1;
+        }
+       else
+          minute[0]++;
+       minute[1] ='0';
+    }
+    else
+    {
+     minute[1]++; 
+    }
+    // Hour
+    if(hourRollover)
+    {
+      if(hour.length() == 1)
+      {
+         if(hour == "9")
+           hour = "10"; 
+         else
+           hour[0]++;
+      }
+      else
+      {
+         if(hour == "12")
+           hour = "1";
+         else
+           hour[1]++;
+      }
+    }
+  }
   //Clear screen logic
   if(new_city != city ) {
     myGLCD.clrScr();
@@ -172,17 +215,20 @@ void loop() {
   
   myGLCD.setColor(255, 0, 0);
   myGLCD.setFont(BigFont);
-  myGLCD.print("Wall Weather Forecaster", CENTER, 0);
+  myGLCD.print("Wall Weather Forecaster", CENTER, 20);
   
   //Set the Current Time
   myGLCD.setFont(SevenSegNumFont);
-  myGLCD.print("10", 150, 80);
+  if(hour.length() == 1)
+    myGLCD.print(hour, 180, 80);
+  else
+    myGLCD.print(hour, 150, 80);
   myGLCD.setFont(BigFont);
   myGLCD.print(":", 210, 100);
   myGLCD.setFont(SevenSegNumFont);
-  myGLCD.print("17", 220, 80);
+  myGLCD.print(minute, 220, 80);
   myGLCD.setFont(BigFont);
-  myGLCD.print("PM", 290, 100);
+  myGLCD.print(meridian, 290, 100);
   
   //Print Current City
   myGLCD.print(Cities[city].cityName, CENTER, 175);
@@ -483,6 +529,7 @@ void loop() {
         //Update button pressed
         if(y >= 60 & y < 240) {
           //do update stuff
+          comms.SendRequest("f");
         }  
         //settings button pressed
         else if(y >= 240 & y <= 420) {
