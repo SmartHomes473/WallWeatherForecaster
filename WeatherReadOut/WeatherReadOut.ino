@@ -34,18 +34,6 @@ CityWeather Cities[5];
 // Time management
 long curTime = 0;
 
-// Weather Update
-const unsigned long updateDelay = 5000; 
-long updateTime = 0;
-
-// Rain Meter
-const unsigned long rainMeterDelay = 1000;
-unsigned long rainMeterTime = rainMeterDelay;
-
-// LCD
-const unsigned long lcdDelay = 1;
-unsigned long lcdTime = lcdDelay;
-
 // Add minute
 const unsigned long clockDelay = 60000;
 unsigned long clockTime = clockDelay;
@@ -67,6 +55,8 @@ String hour ="6", minute = "66", meridian="NT";
 UTFT myGLCD(ITDB50,25,26,27,28);
 UTouch myTouch(6,5,4,3,2);
 
+bool touchLastFrame = false;
+
 //-----------------------------------------------
 // Non-Volatile Storage
 
@@ -75,6 +65,7 @@ UTouch myTouch(6,5,4,3,2);
 
 #include <WeatherComms.h>
 WeatherComms comms;
+
 //-----------------------------------------------
 // Helper Functions
 
@@ -243,6 +234,7 @@ void loop() {
   
   // Set Percentage  
   meter->setChance(Cities[city].rainChance);
+  
   //if displaying triple digit number
   if(digitCounter(displayTemp(temp_i, Cities[city].highTemp)) == 3) {
     //Negative Temp, print '-' sign
@@ -408,32 +400,38 @@ void loop() {
     
     //TouchScreen Logic
     if(myTouch.dataAvailable()) {
-      myTouch.read();
-      x = myTouch.getX();
-      y = myTouch.getY();
-      if(x >= 125 & x <= 200) {
-        if(y >= 51 & y <= 105){
-          new_city = 0;
+      if (!touchLastFrame) {
+        myTouch.read();
+        x = myTouch.getX();
+        y = myTouch.getY();
+        if(x >= 125 & x <= 200) {
+          if(y >= 51 & y <= 105){
+            new_city = 0;
+          }
+          else if(y >= 132 & y <= 186){
+            new_city = 1;
+          }
+          else if(y >= 213 & y <= 267){
+            new_city = 2;
+          }
+          else if(y >= 294 & y <= 348){
+            new_city = 3;
+          }
+          else if(y >= 375 & y <= 429){
+            new_city = 4;
+          }    
         }
-        else if(y >= 132 & y <= 186){
-          new_city = 1;
+        else if(x >= 35 & x <= 90) {
+          if(y >= 51 & y <= 429) {
+            settings = 1;
+            city =-1;
+          } 
         }
-        else if(y >= 213 & y <= 267){
-          new_city = 2;
-        }
-        else if(y >= 294 & y <= 348){
-          new_city = 3;
-        }
-        else if(y >= 375 & y <= 429){
-          new_city = 4;
-        }    
       }
-      else if(x >= 35 & x <= 90) {
-        if(y >= 51 & y <= 429) {
-          settings = 1;
-          city =-1;
-        } 
-      }
+      touchLastFrame = true;
+    }
+    else {
+      touchLastFrame = false;
     }
   }
   else if(settings == 1) {
@@ -487,56 +485,62 @@ void loop() {
     myGLCD.print("Back", 305, 740);
     
     if(myTouch.dataAvailable()) {
-      myTouch.read();
-      x = myTouch.getX();
-      y = myTouch.getY();
-      //temp buttons
-      if(x >= 100 & x <= 200) {
-        if(y >= 60 & y < 180){
-          temp_i = 0;
-          city =-1;
-        }
-        else if(y >= 180 & y < 300) {
-          temp_i = 1; 
-          city =-1;
-        }
-        else if(y >= 300 & y <= 420) {
-          temp_i = 2; 
-          city =-1;
-        }
-      }
-      else if(x >= 210 & x <= 260) {
-        // < button pressed
-        if(y >= 250 & y <= 320) {
-          if(update_i == 0) {
-            update_i = 23;
+      if (!touchLastFrame) {
+        myTouch.read();
+        x = myTouch.getX();
+        y = myTouch.getY();
+        //temp buttons
+        if(x >= 100 & x <= 200) {
+          if(y >= 60 & y < 180){
+            temp_i = 0;
+            city =-1;
           }
-          else {
-            update_i = update_i - 1;  
+          else if(y >= 180 & y < 300) {
+            temp_i = 1; 
+            city =-1;
+          }
+          else if(y >= 300 & y <= 420) {
+            temp_i = 2; 
+            city =-1;
           }
         }
-        //> button pressed
-        else if(y >= 395 & y <= 470) {
-          if(update_i == 23) {
-            update_i = 0;
+        else if(x >= 210 & x <= 260) {
+          // < button pressed
+          if(y >= 250 & y <= 320) {
+            if(update_i == 0) {
+              update_i = 23;
+            }
+            else {
+              update_i = update_i - 1;  
+            }
           }
-          else {
-            update_i = update_i + 1;
+          //> button pressed
+          else if(y >= 395 & y <= 470) {
+            if(update_i == 23) {
+              update_i = 0;
+            }
+            else {
+              update_i = update_i + 1;
+            }  
+          }
+        }
+        else if(x >= 0 & x < 100) {
+          //Update button pressed
+          if(y >= 60 & y < 240) {
+            //do update stuff
+            comms.SendRequest("f");
           }  
+          //settings button pressed
+          else if(y >= 240 & y <= 420) {
+            settings = 0;
+            city =-1;
+          }
         }
       }
-      else if(x >= 0 & x < 100) {
-        //Update button pressed
-        if(y >= 60 & y < 240) {
-          //do update stuff
-          comms.SendRequest("f");
-        }  
-        //settings button pressed
-        else if(y >= 240 & y <= 420) {
-          settings = 0;
-          city =-1;
-        }
-      }
-    } 
+      touchLastFrame = true;
+    }
+    else {
+      touchLastFrame = false;
+    }
   }
 }
