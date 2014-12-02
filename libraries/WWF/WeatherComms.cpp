@@ -1,7 +1,8 @@
 #include <WeatherComms.h>
 extern int city;
 extern String hour,minute, meridian;
-extern 
+extern int temp_i, update_i;
+
 void WeatherComms::registerDevice() {
    devID = FlashStorage.read(0)+4;
    Serial.println("ID: " + String(devID));
@@ -74,8 +75,8 @@ void WeatherComms::processTime(int &index, String Data){
 void WeatherComms::processSettings(int &index, String Data){
   // Inserts data for settings change.
   // Data: updateInterval;temperatureScale#
-  update_i = ParseValue(index,Data)%24;
-  temp_i = ParseValue(index,Data)%3;
+  update_i = (ParseValue(index,Data).toInt() - 1)%24;
+  temp_i = ParseValue(index,Data).toInt()%3;
 }
 
 void WeatherComms::processWeatherUpdate(int & index,String Data){

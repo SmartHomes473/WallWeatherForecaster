@@ -33,11 +33,14 @@ CityWeather Cities[5];
 //---------------------------------------------------------------
 // Time management
 long curTime = 0;
-
+ 
 // Add minute
 const unsigned long clockDelay = 60000;
 unsigned long clockTime = clockDelay;
 
+// Update delay
+unsigned long updateDelay = 1000;
+unsigned long updateTime = updateDelay;
 //---------------------------------------------------------------
 // Touchscreen
 #include <UTFT.h>
@@ -56,9 +59,7 @@ UTFT myGLCD(ITDB50,25,26,27,28);
 UTouch myTouch(6,5,4,3,2);
 
 bool touchLastFrame = false;
-
-//-----------------------------------------------
-// Non-Volatile Storage
+bool cityTouched = false;
 
 //-----------------------------------------------
 // Comms
@@ -158,6 +159,13 @@ void loop() {
   // Check for incomming messages
   comms.packetBuilder();
 
+  // Automatic update upkeep
+  /* if (updateTime < curTime) {
+    updateTime += updateDelay * (update_i + 1);
+    comms.SendRequest("f");
+    Serial.println("New update");
+  } */
+  
   // Update LCD Task - Performs scrolling of data.
   if(clockTime < curTime)
   {
@@ -203,121 +211,122 @@ void loop() {
   if(new_city != city ) {
     myGLCD.clrScr();
     city = new_city;
-  
-  myGLCD.setColor(255, 0, 0);
-  myGLCD.setFont(BigFont);
-  myGLCD.print("Wall Weather Forecaster", CENTER, 20);
-  
-  //Set the Current Time
-  myGLCD.setFont(SevenSegNumFont);
-  if(hour.length() == 1)
-    myGLCD.print(hour, 180, 80);
-  else
-    myGLCD.print(hour, 150, 80);
-  myGLCD.setFont(BigFont);
-  myGLCD.print(":", 210, 100);
-  myGLCD.setFont(SevenSegNumFont);
-  myGLCD.print(minute, 220, 80);
-  myGLCD.setFont(BigFont);
-  myGLCD.print(meridian, 290, 100);
-  
-  //Print Current City
-  myGLCD.print(Cities[city].cityName, CENTER, 175);
-  
-  //Print Condition
-  myGLCD.print("Condition:", 0, 240);
-  myGLCD.print(Cities[city].condition, 163, 240);
-  
-  //Print High Temperature
-  myGLCD.print("High Temp:", 0, 300);
-  myGLCD.setFont(SevenSegNumFont);
-  
-  // Set Percentage  
-  meter->setChance(Cities[city].rainChance);
-  
-  //if displaying triple digit number
-  if(digitCounter(displayTemp(temp_i, Cities[city].highTemp)) == 3) {
-    //Negative Temp, print '-' sign
-    if(displayTemp(temp_i, Cities[city].highTemp).toInt() < 0) {
-      myGLCD.setFont(BigFont);
-      myGLCD.print("-", 160, 300);
-      myGLCD.setFont(SevenSegNumFont);
-    }
-    myGLCD.print(String(abs(displayTemp(temp_i, Cities[city].highTemp).toInt())), 175, 280);
-  }
-  else if(digitCounter(displayTemp(temp_i, Cities[city].highTemp)) == 2) {
-    //Negative Temp, print '-' sign
-    if(displayTemp(temp_i, Cities[city].highTemp).toInt() < 0) {
-      myGLCD.setFont(BigFont);
-      myGLCD.print("-", 192, 300);
-      myGLCD.setFont(SevenSegNumFont);
-    }
-    myGLCD.print(String(abs(displayTemp(temp_i, Cities[city].highTemp).toInt())), 207, 280);
-  }
-  else if(digitCounter(displayTemp(temp_i, Cities[city].highTemp)) == 1) {
-    //Negative Temp, print '-' sign
-    if(displayTemp(temp_i, Cities[city].highTemp).toInt() < 0) {
-      myGLCD.setFont(BigFont);
-      myGLCD.print("-", 224, 300);
-      myGLCD.setFont(SevenSegNumFont);
-    }
-    myGLCD.print(String(abs(displayTemp(temp_i, Cities[city].highTemp).toInt())), 239, 280);
-  }
-
-  myGLCD.setFont(BigFont);
-  myGLCD.print(temp[temp_i], 270, 280);
-  
-  //if displaying triple digit number
-  if(digitCounter(displayTemp(temp_i, Cities[city].lowTemp)) == 3) {
-    //Print Low Temperature
-    myGLCD.print("Low Temp:", 0, 380);
-    myGLCD.setFont(SevenSegNumFont);
-    if(displayTemp(temp_i, Cities[city].lowTemp).toInt() < 0) {
-      myGLCD.setFont(BigFont);
-      myGLCD.print("-", 160, 380);
-      myGLCD.setFont(SevenSegNumFont);
-    }
-    myGLCD.print(String(abs(displayTemp(temp_i, Cities[city].lowTemp).toInt())), 175, 360);
-  }
-  else if(digitCounter(displayTemp(temp_i, Cities[city].lowTemp)) == 2) {
-    //Print Low Temperature
-    myGLCD.print("Low Temp:", 0, 380);
-    myGLCD.setFont(SevenSegNumFont);
-    if(displayTemp(temp_i, Cities[city].lowTemp).toInt() < 0) {
-      myGLCD.setFont(BigFont);
-      myGLCD.print("-", 192, 380);
-      myGLCD.setFont(SevenSegNumFont);
-    }
-    myGLCD.print(String(abs(displayTemp(temp_i, Cities[city].lowTemp).toInt())), 207, 360);
-  }
-  else if(digitCounter(displayTemp(temp_i, Cities[city].lowTemp)) == 1) {
-    //Print Low Temperature
-    myGLCD.print("Low Temp:", 0, 380);
-    myGLCD.setFont(SevenSegNumFont);
-    if(displayTemp(temp_i, Cities[city].lowTemp).toInt() < 0) {
-      myGLCD.setFont(BigFont);
-      myGLCD.print("-", 224, 380);
-      myGLCD.setFont(SevenSegNumFont);
-    }
-    myGLCD.print(String(abs(displayTemp(temp_i, Cities[city].lowTemp).toInt())), 239, 360);
-  }  
-  
-  myGLCD.setFont(BigFont);
-  myGLCD.print(temp[temp_i], 270, 360); 
-  
-  //Print Humidity %
-  myGLCD.print("Humidity:", 0, 460);
-  myGLCD.setFont(SevenSegNumFont);
-  if(digitCounter(Cities[city].humidityPercent) == 3)
-    myGLCD.print(Cities[city].humidityPercent, 175, 440);
-  else if(digitCounter(Cities[city].humidityPercent) == 2)
-    myGLCD.print(Cities[city].humidityPercent, 207, 440);
-  else if(digitCounter(Cities[city].humidityPercent) == 1)
-    myGLCD.print(Cities[city].humidityPercent, 239, 440);
     
-  myGLCD.setFont(BigFont);
-  myGLCD.print("%", 270, 440); 
+    myGLCD.setColor(255, 0, 0);
+    myGLCD.setFont(BigFont);
+    myGLCD.print("Wall Weather Forecaster", CENTER, 20);
+    
+    //Set the Current Time
+    myGLCD.setFont(SevenSegNumFont);
+    if(hour.length() == 1)
+      myGLCD.print(hour, 180, 80);
+    else
+      myGLCD.print(hour, 150, 80);
+    myGLCD.setFont(BigFont);
+    myGLCD.print(":", 210, 100);
+    myGLCD.setFont(SevenSegNumFont);
+    myGLCD.print(minute, 220, 80);
+    myGLCD.setFont(BigFont);
+    myGLCD.print(meridian, 290, 100);
+    
+    //Print Current City
+    myGLCD.print(Cities[city].cityName, CENTER, 175);
+    
+    //Print Condition
+    myGLCD.print("Condition:", 0, 240);
+    myGLCD.print(Cities[city].condition, 163, 240);
+    
+    //Print High Temperature
+    myGLCD.print("High Temp:", 0, 300);
+    myGLCD.setFont(SevenSegNumFont);
+    
+    // Set Percentage  
+    meter->setChance(Cities[city].rainChance);
+    
+    //if displaying triple digit number
+    if(digitCounter(displayTemp(temp_i, Cities[city].highTemp)) == 3) {
+      //Negative Temp, print '-' sign
+      if(displayTemp(temp_i, Cities[city].highTemp).toInt() < 0) {
+        myGLCD.setFont(BigFont);
+        myGLCD.print("-", 160, 300);
+        myGLCD.setFont(SevenSegNumFont);
+      }
+      myGLCD.print(String(abs(displayTemp(temp_i, Cities[city].highTemp).toInt())), 175, 280);
+    }
+    else if(digitCounter(displayTemp(temp_i, Cities[city].highTemp)) == 2) {
+      //Negative Temp, print '-' sign
+      if(displayTemp(temp_i, Cities[city].highTemp).toInt() < 0) {
+        myGLCD.setFont(BigFont);
+        myGLCD.print("-", 192, 300);
+        myGLCD.setFont(SevenSegNumFont);
+      }
+      myGLCD.print(String(abs(displayTemp(temp_i, Cities[city].highTemp).toInt())), 207, 280);
+    }
+    else if(digitCounter(displayTemp(temp_i, Cities[city].highTemp)) == 1) {
+      //Negative Temp, print '-' sign
+      if(displayTemp(temp_i, Cities[city].highTemp).toInt() < 0) {
+        myGLCD.setFont(BigFont);
+        myGLCD.print("-", 224, 300);
+        myGLCD.setFont(SevenSegNumFont);
+      }
+      myGLCD.print(String(abs(displayTemp(temp_i, Cities[city].highTemp).toInt())), 239, 280);
+    }
+  
+    myGLCD.setFont(BigFont);
+    myGLCD.print(temp[temp_i], 270, 280);
+    
+    //if displaying triple digit number
+    if(digitCounter(displayTemp(temp_i, Cities[city].lowTemp)) == 3) {
+      //Print Low Temperature
+      myGLCD.print("Low Temp:", 0, 380);
+      myGLCD.setFont(SevenSegNumFont);
+      if(displayTemp(temp_i, Cities[city].lowTemp).toInt() < 0) {
+        myGLCD.setFont(BigFont);
+        myGLCD.print("-", 160, 380);
+        myGLCD.setFont(SevenSegNumFont);
+      }
+      myGLCD.print(String(abs(displayTemp(temp_i, Cities[city].lowTemp).toInt())), 175, 360);
+    }
+    else if(digitCounter(displayTemp(temp_i, Cities[city].lowTemp)) == 2) {
+      //Print Low Temperature
+      myGLCD.print("Low Temp:", 0, 380);
+      myGLCD.setFont(SevenSegNumFont);
+      if(displayTemp(temp_i, Cities[city].lowTemp).toInt() < 0) {
+        myGLCD.setFont(BigFont);
+        myGLCD.print("-", 192, 380);
+        myGLCD.setFont(SevenSegNumFont);
+      }
+      myGLCD.print(String(abs(displayTemp(temp_i, Cities[city].lowTemp).toInt())), 207, 360);
+    }
+    else if(digitCounter(displayTemp(temp_i, Cities[city].lowTemp)) == 1) {
+      //Print Low Temperature
+      myGLCD.print("Low Temp:", 0, 380);
+      myGLCD.setFont(SevenSegNumFont);
+      if(displayTemp(temp_i, Cities[city].lowTemp).toInt() < 0) {
+        myGLCD.setFont(BigFont);
+        myGLCD.print("-", 224, 380);
+        myGLCD.setFont(SevenSegNumFont);
+      }
+      myGLCD.print(String(abs(displayTemp(temp_i, Cities[city].lowTemp).toInt())), 239, 360);
+    }  
+    
+    myGLCD.setFont(BigFont);
+    myGLCD.print(temp[temp_i], 270, 360); 
+    
+    //Print Humidity %
+    myGLCD.print("Humidity:", 0, 460);
+    myGLCD.setFont(SevenSegNumFont);
+    if(digitCounter(Cities[city].humidityPercent) == 3)
+      myGLCD.print(Cities[city].humidityPercent, 175, 440);
+    else if(digitCounter(Cities[city].humidityPercent) == 2)
+      myGLCD.print(Cities[city].humidityPercent, 207, 440);
+    else if(digitCounter(Cities[city].humidityPercent) == 1)
+      myGLCD.print(Cities[city].humidityPercent, 239, 440);
+      
+    myGLCD.setFont(BigFont);
+    myGLCD.print("%", 270, 440); 
   }
+  
   if(settings == 0) {
     //Draw Cities/Settings Boxes
     myGLCD.print("Stored Cities", CENTER, 570);
@@ -407,18 +416,23 @@ void loop() {
         if(x >= 125 & x <= 200) {
           if(y >= 51 & y <= 105){
             new_city = 0;
+            cityTouched = true;
           }
           else if(y >= 132 & y <= 186){
             new_city = 1;
+            cityTouched = true;
           }
           else if(y >= 213 & y <= 267){
             new_city = 2;
+            cityTouched = true;
           }
           else if(y >= 294 & y <= 348){
             new_city = 3;
+            cityTouched = true;
           }
           else if(y >= 375 & y <= 429){
             new_city = 4;
+            cityTouched = true;
           }    
         }
         else if(x >= 35 & x <= 90) {
@@ -427,12 +441,17 @@ void loop() {
             city =-1;
           } 
         }
+        if (new_city == city && cityTouched) {
+          meter->reset();
+          meter->setChance(Cities[city].rainChance);
+        }
       }
       touchLastFrame = true;
     }
     else {
       touchLastFrame = false;
     }
+    cityTouched = false;
   }
   else if(settings == 1) {
     myGLCD.drawLine(0,515,480,515);
@@ -508,20 +527,24 @@ void loop() {
           // < button pressed
           if(y >= 250 & y <= 320) {
             if(update_i == 0) {
+              // updateTime -= updateDelay * 23;
               update_i = 23;
             }
             else {
+              // updateTime -= updateDelay;
               update_i = update_i - 1;  
             }
           }
           //> button pressed
           else if(y >= 395 & y <= 470) {
             if(update_i == 23) {
+              // updateTime -= updateDelay * 23;
               update_i = 0;
             }
             else {
-              update_i = update_i + 1;
-            }  
+              // updateTime += updateDelay; 
+              update_i = update_i + 1;  
+            } 
           }
         }
         else if(x >= 0 & x < 100) {

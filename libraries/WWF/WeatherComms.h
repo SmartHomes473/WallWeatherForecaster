@@ -49,6 +49,7 @@ class WeatherComms{
   void SendRequest(String data);
 
   String ParseValue(int &i, String s);
+  void processSettings(int &index, String Data);
   void processWeatherUpdate(int & index, String Data);
   void processTime(int &index, String Data);
   void packetProcessor(byte id, byte packetStatus, unsigned packetLength, String Data);
