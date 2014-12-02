@@ -9,6 +9,7 @@ RainMeter::RainMeter(double stepSize, double maxDegrees, int *statePins) {
 	this->stepSize = stepSize;
 	this->degreesPerPercent = maxDegrees/100.0;
 	this->totalSteps = (int)(maxDegrees/stepSize);
+	Serial.println("Step size:"+String(stepSize)+ "\nDegrees/Percent: "+String(degreesPerPercent)+"\ntotalSteps: "+String(totalSteps));
 	this->pins[0] = *statePins;
 	this->pins[1] = *(statePins + 1);
 	this->pins[2] = *(statePins + 2);
@@ -19,26 +20,35 @@ RainMeter::RainMeter(double stepSize, double maxDegrees, int *statePins) {
 
 void RainMeter::setChance(int newChance) {
 	bool clockwise;
-	
-	double diff = newChance - ((currentStep * stepSize)/degreesPerPercent);
-	int steps = abs((int)(diff * 0.01 * totalSteps));
+	double curChance = (currentStep * stepSize)/degreesPerPercent;
+	double diff = double(newChance) - curChance;
+	double steps = abs((int)(diff * 0.01 * totalSteps));
+	Serial.println("DesiredChance: "+
+		       String(newChance)+
+		       "\nCurChance:"+
+		       String(curChance));
 	if (diff < 0) {
 		clockwise = true;
 	}
 	else {
 		clockwise = false;
 	}
-	
+	curChance = ((currentStep + steps) * stepSize)/degreesPerPercent;
+	if(curChance < newChance)
+	  steps++;
 	step(steps, clockwise);
+	curChance = (currentStep * stepSize)/degreesPerPercent;
 }
 
 // Resets the stepper motor to its resting position
 // Stopped by a physical barrier on the WWF wall mount
 void RainMeter::reset(bool clockwise) {
 	// Turn it its max number of steps (plus a few to be on the safe side)
-	this->currentStep = 48;
-	step(totalSteps + 5, clockwise);
+	this->currentStep = this->totalSteps;
+	step(totalSteps, clockwise);
 	this->currentStep = 0;
+	
+	
 }
 
 void RainMeter::step(int numSteps, bool clockwise) {
@@ -49,7 +59,7 @@ void RainMeter::step(int numSteps, bool clockwise) {
 		else {
 			this->currentStep++;
 		}
-		
+		Serial.println("Step: "+String(this->currentStep));
 		switch((this->currentStep) % 4) {
 			
 			case 0:
