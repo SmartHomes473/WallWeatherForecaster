@@ -75,8 +75,10 @@ void WeatherComms::processTime(int &index, String Data){
 void WeatherComms::processSettings(int &index, String Data){
   // Inserts data for settings change.
   // Data: updateInterval;temperatureScale#
+  
   update_i = (ParseValue(index,Data).toInt() - 1)%24;
   temp_i = ParseValue(index,Data).toInt()%3;
+  Serial.println('U: '+String(update_i)+'T:'+String(temp_i));
 }
 
 void WeatherComms::processWeatherUpdate(int & index,String Data){
@@ -168,14 +170,13 @@ void WeatherComms::packetBuilder()
      incoming[i++] = NULL;
      if(packetState == WaitingforStart)
      {
-       char * location =strchr(incoming,0x0f);
+       char * location =(char*)memchr(incoming,0x0f,i);
        if(location != NULL)
        {
-         char * endL = strchr(location,0x04);
-         
+	 char * endL = (char*)memchr(location,0x04,i);
          while( endL != NULL && ((endL - location) < 4))
          {
-             endL = strchr(endL+1,0x04);
+	   endL = (char*)memchr((endL+1),0x04,i-(endL-location));
          }
          
          int j = i-long(location-incoming);
@@ -190,7 +191,7 @@ void WeatherComms::packetBuilder()
      }
      else if(packetState == WaitingforEnd)
      {
-       char * endL = strchr(incoming,0x04);
+       char * endL = (char*)memchr(incoming,0x04,i);
        if(i+inbufferI < INBUFFERMAX)
        {
          memcpy(inbuffer+inbufferI,incoming,i);
