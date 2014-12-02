@@ -59,7 +59,6 @@ UTFT myGLCD(ITDB50,25,26,27,28);
 UTouch myTouch(6,5,4,3,2);
 
 bool touchLastFrame = false;
-bool cityTouched = false;
 
 //-----------------------------------------------
 // Comms
@@ -413,26 +412,22 @@ void loop() {
         myTouch.read();
         x = myTouch.getX();
         y = myTouch.getY();
+        int temp = -1;
         if(x >= 125 & x <= 200) {
           if(y >= 51 & y <= 105){
-            new_city = 0;
-            cityTouched = true;
+            temp = 0;
           }
           else if(y >= 132 & y <= 186){
-            new_city = 1;
-            cityTouched = true;
+            temp = 1;
           }
           else if(y >= 213 & y <= 267){
-            new_city = 2;
-            cityTouched = true;
+            temp = 2;
           }
           else if(y >= 294 & y <= 348){
-            new_city = 3;
-            cityTouched = true;
+            temp = 3;
           }
           else if(y >= 375 & y <= 429){
-            new_city = 4;
-            cityTouched = true;
+            temp = 4;
           }    
         }
         else if(x >= 35 & x <= 90) {
@@ -441,9 +436,12 @@ void loop() {
             city =-1;
           } 
         }
-        if (new_city == city && cityTouched) {
-          meter->reset();
-          meter->setChance(Cities[city].rainChance);
+        if (temp != -1) {
+          new_city = temp;
+          if (new_city == city) { 
+            meter->reset();
+            meter->setChance(Cities[city].rainChance);
+          }
         }
       }
       touchLastFrame = true;
@@ -451,7 +449,6 @@ void loop() {
     else {
       touchLastFrame = false;
     }
-    cityTouched = false;
   }
   else if(settings == 1) {
     myGLCD.drawLine(0,515,480,515);
