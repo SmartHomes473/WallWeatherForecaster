@@ -62,7 +62,11 @@ int Display::digitCounter(String temp) {
 void Display::dumbDisplay(){
   //Clear screen logic
   if(new_city != city || screenReset) {
-    screenReset = false;
+	if (screenReset) {
+		myGLCD.clrScr();
+		screenReset = false;
+	}
+	
     city = new_city;
 	
 	myGLCD.setColor(VGA_BLACK);
@@ -96,9 +100,6 @@ void Display::dumbDisplay(){
     //Print High Temperature
     myGLCD.print("High Temp:", 0, 300);
     myGLCD.setFont(SevenSegNumFont);
-    
-    // Set Percentage  
-    meter->setChance(Cities[city].rainChance);
     
     //if displaying triple digit number
     if(digitCounter(displayTemp(temp_i, Cities[city].highTemp)) == 3) {
@@ -182,6 +183,9 @@ void Display::dumbDisplay(){
       
     myGLCD.setFont(BigFont);
     myGLCD.print("%", 270, 440); 
+	
+	// Set Percentage  
+    meter->setChance(Cities[city].rainChance);
   }
   
   if(settings == 0) {
@@ -300,8 +304,7 @@ void Display::dumbDisplay(){
           new_city = temp;
           if (new_city == city) { 
 			screenReset = true;
-			myGLCD.clrScr();
-            meter->reset();
+			meter->reset();
             meter->setChance(Cities[city].rainChance);
           }
         }
