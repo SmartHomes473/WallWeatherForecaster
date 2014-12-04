@@ -4,7 +4,7 @@ extern String hour,minute, meridian;
 extern int temp_i, update_i;
 
 void WeatherComms::registerDevice() {
-   devID = FlashStorage.read(0)+4;
+   devID = FlashStorage.read(0)+2;
    Serial.println("ID: " + String(devID));
    // If all bits are 1 the flash hasn't been written and therefore the device hasn't been registered
    if (devID == 255)

@@ -16,6 +16,7 @@ int motorPins[4] = {9, 10, 11, 12};
 
 //---------------------------------------------------------------
 // Motion Sensor
+
 int lcdState = HIGH;
 
 //---------------------------------------------------------------
@@ -75,6 +76,7 @@ void setup() {
   myTouch.InitTouch(LANDSCAPE);
   myTouch.setPrecision(PREC_MEDIUM);
   myGLCD.clrScr();
+  myGLCD.fillScr(VGA_BLACK);
   
   // City stuff
   city = -1;
