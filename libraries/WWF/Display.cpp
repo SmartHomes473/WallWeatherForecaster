@@ -24,6 +24,8 @@ extern UTouch myTouch;
 
 extern bool touchLastFrame;
 
+bool screenReset = false;
+
 //-----------------------------------------------
 // Helper Functions
 
@@ -59,9 +61,13 @@ int Display::digitCounter(String temp) {
 
 void Display::dumbDisplay(){
   //Clear screen logic
-  if(new_city != city ) {
-    myGLCD.clrScr();
+  if(new_city != city || screenReset) {
+    screenReset = false;
     city = new_city;
+	
+	myGLCD.setColor(VGA_BLACK);
+	myGLCD.fillRect(0,80,479,239);
+	myGLCD.fillRect(163,240,479,500);
     
     myGLCD.setColor(VGA_BLUE);
     myGLCD.setFont(BigFont);
@@ -284,6 +290,8 @@ void Display::dumbDisplay(){
         }
         else if(x >= 35 & x <= 90) {
           if(y >= 51 & y <= 429) {
+			myGLCD.setColor(VGA_BLACK);
+		    myGLCD.fillRect(0,490,479,799);
             settings = 1;
             city =-1;
           } 
@@ -291,6 +299,8 @@ void Display::dumbDisplay(){
         if (temp != -1) {
           new_city = temp;
           if (new_city == city) { 
+			screenReset = true;
+			myGLCD.clrScr();
             meter->reset();
             meter->setChance(Cities[city].rainChance);
           }
@@ -404,6 +414,8 @@ void Display::dumbDisplay(){
           }  
           //settings button pressed
           else if(y >= 240 & y <= 420) {
+		    myGLCD.setColor(VGA_BLACK);
+		    myGLCD.fillRect(0,490,479,799);
             settings = 0;
             city =-1;
           }
