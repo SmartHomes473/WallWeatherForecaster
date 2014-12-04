@@ -40,7 +40,7 @@ const unsigned long clockDelay = 60000;
 unsigned long clockTime = clockDelay;
 
 // Update delay
-unsigned long updateDelay = 1000;
+unsigned long updateDelay = 60000;
 unsigned long updateTime = updateDelay;
 //---------------------------------------------------------------
 // Touchscreen
@@ -130,11 +130,11 @@ void loop() {
   comms.packetBuilder();
 
   // Automatic update upkeep
-  /* if (updateTime < curTime) {
+  if (updateTime < curTime) {
     updateTime += updateDelay * (update_i + 1);
     comms.SendRequest("f");
     Serial.println("New update");
-  } */
+  }
   
   // Update LCD Task - Performs scrolling of data.
   if(clockTime < curTime)

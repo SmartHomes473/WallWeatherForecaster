@@ -183,7 +183,7 @@ void Display::dumbDisplay(){
     myGLCD.print("Stored Cities", CENTER, 570);
     myGLCD.setFont(SevenSegNumFont);
     if(city == 0) {
-      myGLCD.setColor(VGA_YELLOW); 
+      myGLCD.setColor(0xFF, 0xCB, 0x05); 
       myGLCD.drawRect(51, 600, 105, 675);
       myGLCD.print("1", 55, 610);
       myGLCD.setColor(VGA_BLUE); 
@@ -199,7 +199,7 @@ void Display::dumbDisplay(){
     else if(city == 1) {
       myGLCD.drawRect(51, 600, 105, 675);
       myGLCD.print("1", 55, 610);
-      myGLCD.setColor(VGA_YELLOW); //draw in blue
+      myGLCD.setColor(0xFF, 0xCB, 0x05); //draw in blue
       myGLCD.drawRect(132, 600, 186, 675);
       myGLCD.print("2", 143, 610);
       myGLCD.setColor(VGA_BLUE); //draw in red
@@ -216,7 +216,7 @@ void Display::dumbDisplay(){
       myGLCD.print("1", 55, 610); 
       myGLCD.drawRect(132, 600, 186, 675);
       myGLCD.print("2", 143, 610);
-      myGLCD.setColor(VGA_YELLOW); //draw in blue
+      myGLCD.setColor(0xFF, 0xCB, 0x05); //draw in blue
       myGLCD.drawRect(213, 600, 267, 675);
       myGLCD.print("3", 224, 610);
       myGLCD.setColor(VGA_BLUE); //draw in red
@@ -232,7 +232,7 @@ void Display::dumbDisplay(){
       myGLCD.print("2", 143, 610);
       myGLCD.drawRect(213, 600, 267, 675);
       myGLCD.print("3", 224, 610);
-      myGLCD.setColor(VGA_YELLOW); //draw in blue
+      myGLCD.setColor(0xFF, 0xCB, 0x05); //draw in blue
       myGLCD.drawRect(294, 600, 348, 675);
       myGLCD.print("4", 305, 610);
       myGLCD.setColor(VGA_BLUE); //draw in red
@@ -248,7 +248,7 @@ void Display::dumbDisplay(){
       myGLCD.print("3", 224, 610);
       myGLCD.drawRect(294, 600, 348, 675);
       myGLCD.print("4", 305, 610);
-      myGLCD.setColor(VGA_YELLOW); //draw in blue
+      myGLCD.setColor(0xFF, 0xCB, 0x05); //draw in blue
       myGLCD.drawRect(375, 600, 429, 675);
       myGLCD.print("5", 386, 610); 
       myGLCD.setColor(VGA_BLUE); //draw in red 
@@ -317,7 +317,7 @@ void Display::dumbDisplay(){
     myGLCD.print(">",420,560);
     
     if(temp_i == 0) {
-      myGLCD.setColor(VGA_YELLOW);
+      myGLCD.setColor(0xFF, 0xCB, 0x05);
       myGLCD.drawRect(80,625,160,675);
       myGLCD.print("F",110,645);
       myGLCD.setColor(VGA_BLUE);
@@ -329,7 +329,7 @@ void Display::dumbDisplay(){
     else if(temp_i == 1) {
       myGLCD.drawRect(80,625,160,675);
       myGLCD.print("F",110,645);
-      myGLCD.setColor(VGA_YELLOW);
+      myGLCD.setColor(0xFF, 0xCB, 0x05);
       myGLCD.drawRect(200,625,280,675);
       myGLCD.print("C", 230, 645);
       myGLCD.setColor(VGA_BLUE);
@@ -341,7 +341,7 @@ void Display::dumbDisplay(){
       myGLCD.print("F",110,645);
       myGLCD.drawRect(200,625,280,675);
       myGLCD.print("C", 230, 645);
-      myGLCD.setColor(VGA_YELLOW);
+      myGLCD.setColor(0xFF, 0xCB, 0x05);
       myGLCD.drawRect(320,625,400,675);
       myGLCD.print("K", 350, 645);
       myGLCD.setColor(VGA_BLUE);
